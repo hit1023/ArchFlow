@@ -249,10 +249,10 @@
     var mo = new MutationObserver(readCss); mo.observe(document.documentElement, { attributes: true });
     var mq = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)"); if (mq && mq.addEventListener) mq.addEventListener("change", readCss);
     raf = requestAnimationFrame(frame);
-    var zf = 1, fitBox = null, ro = null;
+    var zf = 1, fitBox = null, ro = null, fitReserve = 28;
     function fitNow() {
       if (!fitBox) return; var cw = fitBox.clientWidth; if (!cw) return;
-      var top = Math.max(0, fitBox.getBoundingClientRect().top), availH = Math.max(280, window.innerHeight - top - 28);
+      var top = Math.max(0, fitBox.getBoundingClientRect().top), availH = Math.max(280, window.innerHeight - top - fitReserve);
       var sc = Math.max(0.5, Math.min(1.5, Math.min((cw - 2) / W, availH / H))) * zf;
       canvas.style.width = Math.round(W * sc) + "px"; canvas.style.height = Math.round(H * sc) + "px";
     }
@@ -260,7 +260,7 @@
     return {
       get size() { return { w: W, h: H }; },
       setOrient: function (o) { vert = o !== "h"; layout(); fitNow(); }, getOrient: function () { return vert ? "v" : "h"; },
-      autoFit: function (box) { fitBox = box; canvas.style.margin = "0 auto"; fitNow(); window.addEventListener("resize", onResize); if (window.ResizeObserver) { ro = new ResizeObserver(fitNow); ro.observe(box); } },
+      autoFit: function (box, reserve) { fitBox = box; fitReserve = reserve == null ? 28 : reserve; canvas.style.margin = "0 auto"; fitNow(); window.addEventListener("resize", onResize); if (window.ResizeObserver) { ro = new ResizeObserver(fitNow); ro.observe(box); } },
       refit: fitNow, zoomBy: function (f) { zf = Math.max(0.4, Math.min(2.5, zf * f)); fitNow(); }, zoomReset: function () { zf = 1; fitNow(); },
       setPaused: function (p) { paused = p; }, isPaused: function () { return paused; }, setSpeed: function (v) { speed = v; },
       burst: function () { loadMul = 4; loadUntil = now + 10; },

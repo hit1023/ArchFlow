@@ -70,6 +70,9 @@ button.primary:hover:not(:disabled){box-shadow:0 4px 30px var(--glow),0 0 0 3px 
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips button{font-size:.74rem;padding:4px 11px;color:var(--muted)}
+.composer{margin-top:14px;display:flex;flex-direction:column;gap:9px;padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.composer textarea{min-height:64px}
+.composer .label{color:var(--fg);font-size:.78rem}
 .mode{font-family:var(--font-mono);font-size:.7rem;color:var(--muted)}
 main{display:flex;flex-direction:column;gap:12px;padding:18px 22px;min-width:0;min-height:0;overflow:auto}
 .titlebar h2{margin:0;font-family:var(--font-disp);font-size:1.5rem;letter-spacing:.01em;text-wrap:balance}
@@ -126,13 +129,9 @@ summary{cursor:pointer;color:var(--muted);font-size:.84rem}
   </header>
   <div class="app">
     <aside>
-      <p class="hint">構成を日本語で書くと、役割が動きで分かる図と設計書を作ります。作ったあとは、同じ入力欄から修正の依頼も質問もできます。</p>
-      <div class="chips" id="chips"></div>
+      <p class="hint">構成を日本語で書くと、役割が動きで分かる図と設計書を作ります。作ったあとは、図の下の入力欄から修正の依頼も質問もできます。</p>
       <div class="label">会話</div>
       <div class="log" id="log" aria-live="polite"></div>
-      <div class="mode" id="mode"></div>
-      <textarea id="prompt" aria-label="メッセージ"></textarea>
-      <div class="row"><button class="primary" id="go" type="button">送信</button><button id="newbtn" type="button">新規作成に切替</button><span class="hint" id="status"></span></div>
     </aside>
     <main>
       <div class="titlebar"><h2 id="title"></h2><p id="subtitle"></p></div>
@@ -152,6 +151,12 @@ summary{cursor:pointer;color:var(--muted);font-size:.84rem}
         <div class="stagewrap">
           <div class="zoom" aria-label="表示サイズ"><button id="zout" type="button" aria-label="縮小">−</button><button id="zfit" type="button">FIT</button><button id="zin" type="button" aria-label="拡大">＋</button></div>
           <div class="stage" id="stage"><div class="in"><canvas id="c" role="img" aria-label="生成された動的アーキテクチャ図"></canvas></div></div>
+        </div>
+        <div class="composer">
+          <div class="label" id="ctitle">追加・修正の依頼はありますか？</div>
+          <div class="chips" id="chips"></div>
+          <textarea id="prompt" aria-label="メッセージ"></textarea>
+          <div class="row"><button class="primary" id="go" type="button">送信</button><button id="newbtn" type="button">新規作成に切替</button><span class="mode" id="mode"></span><span class="hint" id="status"></span></div>
         </div>
         <div class="roles" id="roles"></div>
         <details><summary>図のJSON(直接編集して適用できます)</summary>
@@ -207,11 +212,12 @@ function md(src){
     if(eng)eng.destroy();
     $('title').textContent=s.title||'無題'; $('subtitle').textContent=s.subtitle||'';
     $('json').value=JSON.stringify(s,null,1); $('roles').innerHTML=rolesHtml(s);
-    eng=ArchFlow($('c'),s,{orient:orient}); eng.autoFit($('stage')); eng.setSpeed(speeds[si]); $('toggle').textContent='一時停止';
+    eng=ArchFlow($('c'),s,{orient:orient}); eng.autoFit($('stage'),150); eng.setSpeed(speeds[si]); $('toggle').textContent='一時停止';
     $('doc').innerHTML=e.doc?md(e.doc):'<div class="empty">仕様書はまだありません。「仕様書を生成/再生成」を押してください。</div>';
     $('undo').disabled=idx<=0; $('redo').disabled=idx>=hist.length-1;
     $('mode').textContent=newMode?'新規作成モード(次の送信でゼロから作ります)':'この図への修正依頼・質問ができます';
     $('prompt').placeholder=newMode?'例: ユーザーのリクエストがCDN、ロードバランサー、Webサーバー、DBの順に流れる図。':'例: Webサーバーを3台に増やして / ボトルネックはどこ？ / キャッシュにRedisを使う理由は？';
+    $('ctitle').textContent=newMode?'どんな構成の図を作りますか？':'追加・修正の依頼はありますか？';
     $('newbtn').textContent=newMode?'図の修正に戻る':'新規作成に切替';
     persist();
   }
