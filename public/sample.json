@@ -1,0 +1,204 @@
+{
+ "title": "Pod のログが Loki に届くまで",
+ "subtitle": "stdout → ログファイル → Alloy → Loki",
+ "columnLabels": [
+  "① Pod",
+  "② ノード上のログファイル",
+  "③ 収集エージェント",
+  "④ Loki"
+ ],
+ "nodes": [
+  {
+   "id": "pod-api",
+   "label": "api-pod",
+   "sub": "container: api",
+   "kind": "pod",
+   "col": 0,
+   "row": 0,
+   "role": "アプリが標準出力(stdout)にログを書き出す",
+   "product": "containerd"
+  },
+  {
+   "id": "log-api",
+   "label": "0.log",
+   "kind": "file",
+   "col": 1,
+   "row": 0,
+   "role": "stdoutがノード上のファイルに追記される(/var/log/pods)",
+   "product": "kubelet"
+  },
+  {
+   "id": "pod-web",
+   "label": "web-pod",
+   "sub": "container: web",
+   "kind": "pod",
+   "col": 0,
+   "row": 1,
+   "role": "アプリが標準出力(stdout)にログを書き出す",
+   "product": "containerd"
+  },
+  {
+   "id": "log-web",
+   "label": "0.log",
+   "kind": "file",
+   "col": 1,
+   "row": 1,
+   "role": "stdoutがノード上のファイルに追記される(/var/log/pods)",
+   "product": "kubelet"
+  },
+  {
+   "id": "pod-worker",
+   "label": "worker-pod",
+   "sub": "container: worker",
+   "kind": "pod",
+   "col": 0,
+   "row": 2,
+   "role": "アプリが標準出力(stdout)にログを書き出す",
+   "product": "containerd"
+  },
+  {
+   "id": "log-worker",
+   "label": "0.log",
+   "kind": "file",
+   "col": 1,
+   "row": 2,
+   "role": "stdoutがノード上のファイルに追記される(/var/log/pods)",
+   "product": "kubelet"
+  },
+  {
+   "id": "alloy",
+   "label": "Alloy",
+   "kind": "agent",
+   "col": 2,
+   "row": 1,
+   "behavior": {
+    "type": "label",
+    "text": "app / pod / ns"
+   },
+   "role": "各ログファイルを読み取り、app・pod名などのラベルを付けて転送する",
+   "product": "Grafana Alloy"
+  },
+  {
+   "id": "loki",
+   "label": "Loki",
+   "kind": "db",
+   "col": 3,
+   "row": 1,
+   "counter": "行 保存",
+   "behavior": {
+    "type": "batch",
+    "size": 8
+   },
+   "role": "ラベルごとにまとめて(chunk)保存し、LogQLで検索できるようにする",
+   "product": "Grafana Loki"
+  }
+ ],
+ "groups": [
+  {
+   "label": "Kubernetes ノード",
+   "nodes": [
+    "pod-api",
+    "log-api",
+    "pod-web",
+    "log-web",
+    "pod-worker",
+    "log-worker"
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "from": "pod-api",
+   "to": "log-api"
+  },
+  {
+   "from": "log-api",
+   "to": "alloy"
+  },
+  {
+   "from": "pod-web",
+   "to": "log-web"
+  },
+  {
+   "from": "log-web",
+   "to": "alloy"
+  },
+  {
+   "from": "pod-worker",
+   "to": "log-worker"
+  },
+  {
+   "from": "log-worker",
+   "to": "alloy"
+  },
+  {
+   "from": "alloy",
+   "to": "loki"
+  }
+ ],
+ "sources": [
+  {
+   "node": "pod-api",
+   "rate": 1.1,
+   "variants": [
+    {
+     "label": "INFO",
+     "color": "teal",
+     "weight": 75
+    },
+    {
+     "label": "WARN",
+     "color": "amber",
+     "weight": 15
+    },
+    {
+     "label": "ERROR",
+     "color": "red",
+     "weight": 10
+    }
+   ]
+  },
+  {
+   "node": "pod-web",
+   "rate": 1.1,
+   "variants": [
+    {
+     "label": "INFO",
+     "color": "teal",
+     "weight": 75
+    },
+    {
+     "label": "WARN",
+     "color": "amber",
+     "weight": 15
+    },
+    {
+     "label": "ERROR",
+     "color": "red",
+     "weight": 10
+    }
+   ]
+  },
+  {
+   "node": "pod-worker",
+   "rate": 1.1,
+   "variants": [
+    {
+     "label": "INFO",
+     "color": "teal",
+     "weight": 75
+    },
+    {
+     "label": "WARN",
+     "color": "amber",
+     "weight": 15
+    },
+    {
+     "label": "ERROR",
+     "color": "red",
+     "weight": 10
+    }
+   ]
+  }
+ ]
+}

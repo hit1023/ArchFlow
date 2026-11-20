@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ArchFlow</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --fg:#14202e; --muted:#5d6b7d; --line:#c9d2dd;
+  --k8s:#2f6fed; --info:#13a58a; --loki:#e08a00; --warn:#d99a00; --err:#e0453a; --purple:#8a5cf5;
+  --font-ui:"Noto Sans JP",system-ui,-apple-system,"Hiragino Sans",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d141d; --panel:#162130; --fg:#e7edf5; --muted:#8fa0b4; --line:#2b3a4e;
+  --k8s:#6b9bff; --info:#3ddbb8; --loki:#ffb02e; --warn:#f2c14e; --err:#ff6b5e; --purple:#b093ff; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-ui);font-size:14px}
+.app{display:grid;grid-template-columns:350px minmax(0,1fr);height:100%}
+aside{display:flex;flex-direction:column;gap:10px;padding:18px;border-right:1px solid var(--line);background:var(--panel);min-height:0}
+h1{font-size:1.15rem;margin:0;letter-spacing:.02em}
+.hint{color:var(--muted);font-size:.8rem;line-height:1.6;margin:0}
+.log{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.msg{padding:8px 10px;border-radius:8px;font-size:.84rem;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.u{background:var(--bg);border:1px solid var(--line)}
+.msg.a{color:var(--fg);border-left:3px solid var(--k8s);padding-left:10px}
+.msg.s{color:var(--muted);font-size:.78rem}
+.msg.e{color:var(--err)}
+textarea{width:100%;resize:vertical;min-height:84px;max-height:240px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit;line-height:1.6}
+textarea:focus-visible,button:focus-visible{outline:2px solid var(--k8s);outline-offset:2px}
+button{font:inherit;font-size:.85rem;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 13px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--k8s)}
+button:disabled{opacity:.45;cursor:default}
+button.primary{background:var(--k8s);border-color:var(--k8s);color:#fff;font-weight:500}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{font-size:.76rem;padding:4px 10px;color:var(--muted)}
+.mode{font-size:.78rem;color:var(--muted)}
+main{display:flex;flex-direction:column;gap:12px;padding:18px;min-width:0;min-height:0;overflow:auto}
+main h2{margin:0;font-size:1.3rem;text-wrap:balance}
+main p.sub{margin:2px 0 0;color:var(--muted)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:8px 14px;color:var(--muted)}
+.tabs button[aria-selected=true]{color:var(--fg);border-bottom-color:var(--k8s);font-weight:700}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
+canvas{display:block;min-width:760px;width:100%}
+.spacer{flex:1}
+.roles{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin-top:12px}
+.role{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.role b{display:block;font-size:.88rem}
+.role i{font-style:normal;font-family:var(--font-mono);font-size:.72rem;color:var(--k8s)}
+.role span{display:block;color:var(--muted);font-size:.8rem;line-height:1.55}
+details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-top:12px}
+summary{cursor:pointer;color:var(--muted);font-size:.85rem}
+#json{margin-top:10px;font-family:var(--font-mono);font-size:.78rem;min-height:240px}
+.doc{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 26px 22px;line-height:1.8;max-width:900px}
+.doc h1{font-size:1.4rem;margin:18px 0 8px}.doc h2{font-size:1.1rem;margin:26px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--line)}.doc h3{font-size:.98rem;margin:18px 0 6px}
+.doc p{margin:8px 0}.doc ul,.doc ol{margin:8px 0;padding-left:1.4em}
+.doc code{font-family:var(--font-mono);font-size:.85em;background:var(--bg);padding:1px 5px;border-radius:4px}
+.doc pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;overflow-x:auto}.doc pre code{background:none;padding:0;font-size:.8rem}
+.doc .tw{overflow-x:auto}.doc table{border-collapse:collapse;font-size:.84rem;margin:10px 0}.doc th,.doc td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}.doc th{background:var(--bg)}
+.empty{color:var(--muted);padding:30px;text-align:center}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr;height:auto}
+  aside{border-right:0;border-bottom:1px solid var(--line)}
+  .log{max-height:220px}
+  main{overflow:visible}
+  html,body{height:auto}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div><h1>ArchFlow</h1><p class="hint">構成を日本語で書くと、役割が動きで分かる図と設計書を作ります。作ったあとは、同じ入力欄から修正の依頼も質問もできます。</p></div>
+    <div class="chips" id="chips"></div>
+    <div class="log" id="log" aria-live="polite"></div>
+    <div class="mode" id="mode"></div>
+    <textarea id="prompt" aria-label="メッセージ"></textarea>
+    <div class="row"><button class="primary" id="go" type="button">送信</button><button id="newbtn" type="button">新規作成に切替</button><span class="hint" id="status"></span></div>
+  </aside>
+  <main>
+    <div><h2 id="title"></h2><p class="sub" id="subtitle"></p></div>
+    <div class="row">
+      <button id="toggle" type="button">一時停止</button>
+      <button id="burst" type="button">負荷を急増</button>
+      <button id="speed" type="button">速度 x1</button>
+      <button id="undo" type="button">元に戻す</button>
+      <button id="redo" type="button">やり直し</button>
+      <span class="spacer"></span>
+      <button id="exportMd" type="button">仕様書(.md)を保存</button>
+      <button id="export" type="button">単体HTMLを保存</button>
+    </div>
+    <div class="tabs" role="tablist"><button role="tab" id="tab-fig" aria-selected="true" type="button">アニメ図</button><button role="tab" id="tab-doc" aria-selected="false" type="button">仕様書</button></div>
+    <section id="pane-fig">
+      <div class="stage"><canvas id="c" role="img" aria-label="生成された動的アーキテクチャ図"></canvas></div>
+      <div class="roles" id="roles"></div>
+      <details><summary>図のJSON(直接編集して適用できます)</summary>
+        <textarea id="json" spellcheck="false" aria-label="図のJSON"></textarea>
+        <div class="row" style="margin-top:8px"><button id="apply" type="button">JSONを適用</button><span class="hint" id="jsonstatus"></span></div>
+      </details>
+    </section>
+    <section id="pane-doc" hidden>
+      <div class="row" style="margin-bottom:10px"><button id="gendoc" type="button">仕様書を生成/再生成</button><span class="hint" id="docstatus"></span></div>
+      <article class="doc" id="doc"></article>
+    </section>
+  </main>
+</div>
+<script src="/engine.js"></script>
+<script>
+// 簡易Markdown→HTML(見出し・表・リスト・コード・太字・インラインコード)。書き出しHTMLにも埋め込む。
+function md(src){
+  var esc=function(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')};
+  var inl=function(s){return esc(s).replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')};
+  var L=String(src||'').split('\n'),o=[],i=0,list=null;
+  var close=function(){if(list){o.push('</'+list+'>');list=null}};
+  while(i<L.length){
+    var l=L[i];
+    if(/^```/.test(l)){close();var c=[];i++;while(i<L.length&&!/^```/.test(L[i])){c.push(L[i]);i++}i++;o.push('<pre><code>'+esc(c.join('\n'))+'</code></pre>');continue}
+    if(/^\s*\|.*\|\s*$/.test(l)&&i+1<L.length&&/^\s*\|[\s:|-]+\|\s*$/.test(L[i+1])){
+      close();var cells=function(r){return r.trim().replace(/^\||\|$/g,'').split('|').map(function(x){return x.trim()})};
+      var h=cells(l);i+=2;var rows=[];while(i<L.length&&/^\s*\|.*\|\s*$/.test(L[i])){rows.push(cells(L[i]));i++}
+      o.push('<div class="tw"><table><thead><tr>'+h.map(function(x){return'<th>'+inl(x)+'</th>'}).join('')+'</tr></thead><tbody>'+rows.map(function(r){return'<tr>'+r.map(function(x){return'<td>'+inl(x)+'</td>'}).join('')+'</tr>'}).join('')+'</tbody></table></div>');continue}
+    var m;
+    if(m=l.match(/^(#{1,4})\s+(.*)/)){close();o.push('<h'+m[1].length+'>'+inl(m[2])+'</h'+m[1].length+'>');i++;continue}
+    if(m=l.match(/^\s*[-*]\s+(.*)/)){if(list!=='ul'){close();o.push('<ul>');list='ul'}o.push('<li>'+inl(m[1])+'</li>');i++;continue}
+    if(m=l.match(/^\s*\d+[.)]\s+(.*)/)){if(list!=='ol'){close();o.push('<ol>');list='ol'}o.push('<li>'+inl(m[1])+'</li>');i++;continue}
+    close();if(l.trim())o.push('<p>'+inl(l)+'</p>');i++;
+  }
+  close();return o.join('\n');
+}
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var hist=[], idx=-1, eng=null, speeds=[1,2,.5], si=0, newMode=false, chat=[], docToken=0;
+  var START=["Webリクエストの流れ","CI/CD","メッセージキュー"];
+  var STARTP=["ユーザーのリクエストがCDN、ロードバランサー、Webサーバー2台、DBの順に流れる図。たまに5xxエラーも流れる。","開発者のgit pushからCIでのテスト、Dockerイメージ作成、レジストリ、本番へのデプロイまでの流れ。テスト失敗も流れる。","注文サービスがキューにメッセージを積み、ワーカー3台が取り出して処理し、結果をDBに保存する図。"];
+  var FOLLOW=["ボトルネックはどこ？","Webサーバーを3台に増やして","このキャッシュにRedisを使う理由は？","WAFを入口に追加して"];
+  function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+  function say(t,c){var d=document.createElement('div');d.className='msg '+c;d.textContent=t;$('log').appendChild(d);$('log').scrollTop=1e9}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function cur(){return hist[idx]||null}
+  function rolesHtml(s){return s.nodes.filter(function(n){return n.role}).map(function(n){return '<div class="role"><b>'+esc(n.label||n.id)+'</b>'+(n.product?'<i>'+esc(n.product)+'</i>':'')+'<span>'+esc(n.role)+'</span></div>'}).join('')}
+  function persist(){ls('archflow.state3',JSON.stringify({idx:idx,hist:hist.slice(-12).map(function(h){return{spec:h.spec,doc:h.doc,req:h.req}})}))}
+  function render(){
+    var e=cur(); if(!e)return; var s=e.spec;
+    if(eng)eng.destroy();
+    $('title').textContent=s.title||'無題'; $('subtitle').textContent=s.subtitle||'';
+    $('json').value=JSON.stringify(s,null,1); $('roles').innerHTML=rolesHtml(s);
+    eng=ArchFlow($('c'),s); eng.setSpeed(speeds[si]); $('toggle').textContent='一時停止';
+    $('doc').innerHTML=e.doc?md(e.doc):'<div class="empty">仕様書はまだありません。「仕様書を生成/再生成」を押してください。</div>';
+    $('undo').disabled=idx<=0; $('redo').disabled=idx>=hist.length-1;
+    $('mode').textContent=newMode?'新規作成モード(次の送信でゼロから作ります)':'この図への修正依頼・質問ができます';
+    $('prompt').placeholder=newMode?'例: ユーザーのリクエストがCDN、ロードバランサー、Webサーバー、DBの順に流れる図。':'例: Webサーバーを3台に増やして / ボトルネックはどこ？ / キャッシュにRedisを使う理由は？';
+    $('newbtn').textContent=newMode?'図の修正に戻る':'新規作成に切替';
+    persist();
+  }
+  function push(spec,req){hist=hist.slice(0,idx+1);hist.push({spec:spec,doc:null,req:req});idx=hist.length-1;newMode=false;render()}
+  function chips(){$('chips').innerHTML='';var set=cur()&&!newMode?FOLLOW:START;set.forEach(function(t,i){var b=document.createElement('button');b.type='button';b.textContent=t;b.onclick=function(){$('prompt').value=(cur()&&!newMode)?t:STARTP[i];$('prompt').focus()};$('chips').appendChild(b)})}
+
+  async function genDoc(){
+    var e=cur(); if(!e)return; var my=++docToken, target=e;
+    $('docstatus').textContent='仕様書を生成中…(1〜2分)'; $('gendoc').disabled=true;
+    try{
+      var r=await fetch('/api/doc',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({spec:e.spec,request:e.req})});
+      var j=await r.json(); if(!r.ok)throw new Error(j.error||'失敗');
+      target.doc=j.doc; if(cur()===target)$('doc').innerHTML=md(j.doc); persist(); $('docstatus').textContent='生成しました';
+    }catch(err){$('docstatus').textContent='エラー: '+(err.message||err)}
+    $('gendoc').disabled=false;
+  }
+  async function send(){
+    var p=$('prompt').value.trim(); if(!p)return;
+    var e=cur(), isNew=!e||newMode;
+    $('go').disabled=true; $('status').textContent='考え中…(10〜60秒)'; say(p,'u'); $('prompt').value='';
+    try{
+      var r=await fetch('/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({message:p,current:isNew?undefined:e.spec,history:isNew?[]:chat})});
+      var j=await r.json(); if(!r.ok)throw new Error(j.error||'失敗しました');
+      chat.push({role:'user',text:p},{role:'assistant',text:j.reply}); say(j.reply,'a');
+      if(j.spec){ push(j.spec, isNew?p:(e.req+'\n追加依頼: '+p)); chips(); genDoc(); }
+    }catch(err){say(String(err.message||err),'e')}
+    $('go').disabled=false; $('status').textContent='';
+  }
+  $('go').onclick=send;
+  $('prompt').addEventListener('keydown',function(ev){if(ev.key==='Enter'&&!ev.shiftKey&&!ev.isComposing&&ev.keyCode!==229){ev.preventDefault();send()}});
+  $('newbtn').onclick=function(){newMode=!newMode;render();chips()};
+  $('undo').onclick=function(){if(idx>0){idx--;render();say('1つ前の版に戻しました。','s')}};
+  $('redo').onclick=function(){if(idx<hist.length-1){idx++;render();say('やり直しました。','s')}};
+  $('toggle').onclick=function(){var q=!eng.isPaused();eng.setPaused(q);$('toggle').textContent=q?'再生':'一時停止'};
+  $('burst').onclick=function(){eng.burst()};
+  $('speed').onclick=function(){si=(si+1)%speeds.length;eng.setSpeed(speeds[si]);$('speed').textContent='速度 x'+speeds[si]};
+  $('gendoc').onclick=genDoc;
+  $('apply').onclick=function(){try{var s=JSON.parse($('json').value);if(!s.nodes||!s.nodes.length)throw new Error('nodesがありません');push(s,(cur()?cur().req:'')+'\n(JSON直接編集)');$('jsonstatus').textContent='適用しました'}catch(err){$('jsonstatus').textContent='エラー: '+err.message}};
+  function tab(n){var f=n==='fig';$('pane-fig').hidden=!f;$('pane-doc').hidden=f;$('tab-fig').setAttribute('aria-selected',f);$('tab-doc').setAttribute('aria-selected',!f)}
+  $('tab-fig').onclick=function(){tab('fig')}; $('tab-doc').onclick=function(){tab('doc')};
+
+  function dl(name,mime,data){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:mime}));a.download=name;a.click()}
+  function fname(s){return (s.title||'archflow').replace(/[^\w\u3040-\u30ff\u4e00-\u9fff-]+/g,'_')}
+  $('exportMd').onclick=function(){var e=cur();if(!e)return;if(!e.doc){$('docstatus').textContent='先に仕様書を生成してください';tab('doc');return}dl(fname(e.spec)+'_設計書.md','text/markdown',e.doc)};
+  $('export').onclick=async function(){
+    var e=cur(); if(!e)return; var spec=e.spec;
+    var src=await (await fetch('/engine.js')).text();
+    var css=getComputedStyle(document.documentElement), keys=['--bg','--panel','--fg','--muted','--line','--k8s','--info','--loki','--warn','--err','--purple'];
+    var style=':root{'+keys.map(function(k){return k+':'+css.getPropertyValue(k).trim()}).join(';')+'}'
+     +'body{margin:0;padding:24px;background:var(--bg);color:var(--fg);font-family:"Noto Sans JP",system-ui,sans-serif}h1{font-size:1.4rem;margin:0}p.s{color:var(--muted);margin:4px 0 16px}'
+     +'.st{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow-x:auto}canvas{display:block;min-width:760px;width:100%}'
+     +'.roles{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin:12px 0}.role{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}.role b{display:block;font-size:.88rem}.role i{font-style:normal;font-family:monospace;font-size:.72rem;color:var(--k8s)}.role span{display:block;color:var(--muted);font-size:.8rem}'
+     +'.doc{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 26px 22px;line-height:1.8;max-width:900px}.doc h2{border-bottom:1px solid var(--line);padding-bottom:4px;margin-top:26px}.doc code{font-family:monospace;background:var(--bg);padding:1px 5px;border-radius:4px}.doc pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;overflow-x:auto}.doc pre code{padding:0}.doc .tw{overflow-x:auto}.doc table{border-collapse:collapse;font-size:.84rem}.doc th,.doc td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}.doc th{background:var(--bg)}';
+    var html='<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(spec.title||'ArchFlow')+'</title>'
+     +'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap"><style>'+style+'</style></head><body>'
+     +'<h1>'+esc(spec.title||'')+'</h1><p class="s">'+esc(spec.subtitle||'')+'</p><div class="st"><canvas id="c"></canvas></div><div class="roles">'+rolesHtml(spec)+'</div>'
+     +(e.doc?'<article class="doc" id="d"></article>':'')
+     +'<script>'+src.replace(/<\//g,'<\\/')+'<\/script><script>'+md.toString()+';ArchFlow(document.getElementById("c"),'+JSON.stringify(spec).replace(/</g,'\\u003c')+');'
+     +(e.doc?'document.getElementById("d").innerHTML=md('+JSON.stringify(e.doc).replace(/</g,'\\u003c')+');':'')+'<\/script></body></html>';
+    dl(fname(spec)+'.html','text/html',html);
+  };
+
+  (async function(){
+    var saved=null; try{saved=JSON.parse(ls('archflow.state3')||'null')}catch(e){}
+    if(saved&&saved.hist&&saved.hist.length){hist=saved.hist;idx=Math.min(saved.idx,hist.length-1)}
+    else{
+      var s=await (await fetch('/sample.json')).json(), doc=null;
+      try{var r=await fetch('/sample.md');if(r.ok)doc=await r.text()}catch(e){}
+      hist=[{spec:s,doc:doc,req:'Kubernetes の Pod のログが Loki に届くまでの流れ(サンプル)'}];idx=0;
+    }
+    render(); chips();
+  })();
+})();
+</script>
+</body>
+</html>

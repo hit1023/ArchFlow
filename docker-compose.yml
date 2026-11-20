@@ -1,0 +1,13 @@
+services:
+  archflow:
+    build: .
+    container_name: hit-archflow
+    restart: unless-stopped
+    ports:
+      - "8897:8080"
+    env_file:
+      - app.env
+    volumes:
+      - archflow-data:/data
+volumes:
+  archflow-data:
