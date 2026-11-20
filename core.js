@@ -9,6 +9,7 @@ const SYSTEM = `あなたは「動的アーキテクチャ図」の設計者で�
 # 製品(ミドルウェア)の選定
 - ユーザーが製品を指定していなければ、あなたの判断で広く使われているOSSを選び、各ノードの "product" に製品名(必要なら版や構成、例: "Redis 7")を書く。
 - 目安: CDN/エッジキャッシュ→Varnish(または Nginx cache)、LB→HAProxy、リバースプロキシ/GW→Nginx / Traefik / Kong、キュー→RabbitMQ、ストリーム→Apache Kafka、キャッシュ→Redis、RDB→PostgreSQL、検索→OpenSearch、ログ収集→Fluent Bit / Grafana Alloy、ログ保管→Grafana Loki、メトリクス→Prometheus、可視化→Grafana、認証→Keycloak、オブジェクトストレージ→MinIO、CI→Jenkins / Gitea Actions、コンテナ基盤→Kubernetes。
+- 【最優先】ユーザーが製品名を挙げたら(小文字・略称・カタカナ表記でも)、上の目安より必ず優先し、その製品を該当ノードの product に使う。別の製品に置き換えない(例: Grafana と言われたのに OpenSearch にしない)。指定がない部分だけ目安で補う。既存の図の修正では、依頼されていないノードの product は変えない。
 - ユーザーが指定した製品(AWS等のマネージドを含む)は、そのまま product に使う。選定理由は reply と仕様書で説明できるようにする。
 - 全てのノードに product を付ける(図の中に製品名が表示される)。自作アプリは "Node.js アプリ" のように実装技術、利用者側は "ブラウザ" 等とする。
 
@@ -128,11 +129,23 @@ function extractSpecWrapper(text) {
   if (o && o.nodes && !("spec" in o)) return { reply: "図を更新しました。", spec: o };
   return o;
 }
+const KNOWN = ["Grafana","Loki","Prometheus","Alloy","Fluent Bit","Fluentd","Promtail","Tempo","Mimir","OpenSearch","Elasticsearch","Kibana","Logstash","Kafka","RabbitMQ","Redis","Memcached","PostgreSQL","MySQL","MariaDB","MongoDB","Cassandra","ClickHouse","MinIO","Nginx","HAProxy","Varnish","Traefik","Kong","Envoy","Istio","Keycloak","Vault","Consul","Jaeger","Zipkin","OpenTelemetry","Celery","NATS","Pulsar","SQS","S3","CloudFront","Cloudflare","Lambda","DynamoDB","Datadog","Splunk","Zabbix","Nagios","Docker","Kubernetes","ArgoCD","Jenkins","GitLab","Airflow","Spark","Flink","Superset","Metabase","Trino","Presto","InfluxDB","VictoriaMetrics","Thanos","Cortex","Vector","Beats","Filebeat"];
+const KALIAS = { "postgres": "PostgreSQL", "k8s": "Kubernetes", "otel": "OpenTelemetry", "グラファナ": "Grafana", "ロキ": "Loki", "プロメテウス": "Prometheus", "カフカ": "Kafka", "レディス": "Redis" };
+function namedProducts(msg) {
+  const t = String(msg || "").toLowerCase(), out = new Set();
+  KNOWN.forEach((k) => { if (t.includes(k.toLowerCase())) out.add(k); });
+  Object.keys(KALIAS).forEach((a) => { if (t.includes(a)) out.add(KALIAS[a]); });
+  return [...out];
+}
+function productNote(msg) {
+  const n = namedProducts(msg);
+  return n.length ? `\n\n【必須】ユーザーが次の製品を指定しています: ${n.join(", ")}。それぞれ該当するノードの product に必ずそのまま使い、別の製品(OpenSearch等)に置き換えないでください。` : "";
+}
 function chatPrompt(message, current, history) {
   const hist = (history || []).slice(-6).map((h) => `${h.role === "user" ? "ユーザー" : "あなた"}: ${String(h.text).slice(0, 600)}`).join("\n");
   return current
-    ? `現在の図(current):\n${JSON.stringify(current)}\n\n${hist ? "直近のやりとり:\n" + hist + "\n\n" : ""}ユーザーの発言:\n${message}`
-    : `新規作成です。次の説明から図を作成してください(specは必須):\n${message}`;
+    ? `現在の図(current):\n${JSON.stringify(current)}\n\n${hist ? "直近のやりとり:\n" + hist + "\n\n" : ""}ユーザーの発言:\n${message}${productNote(message)}`
+    : `新規作成です。次の説明から図を作成してください(specは必須):\n${message}${productNote(message)}`;
 }
 function retryPrompt(base, err) { return base + `\n\n前回の出力は不正でした(${err.message})。ルールを守った有効なJSONだけを返してください。`; }
 function parseChat(text, current) {
