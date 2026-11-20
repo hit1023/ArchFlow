@@ -37,7 +37,7 @@ function runClaude(prompt, system, timeout) {
   });
 }
 
-let busy = false, busyDoc = false;
+let busy = false, busyDoc = false, devLib = [];
 async function chat(message, current, history) {
   const base = core.chatPrompt(message, current, history);
   let lastErr;
@@ -69,6 +69,12 @@ http.createServer(async (req, res) => {
       busyDoc = true;
       try { return send(res, 200, { doc: await makeDoc(spec, request) }); }
       finally { busyDoc = false; }
+    }
+    // ログインはCloudflare版のみ。ローカル版は未対応(動作確認用に ARCHPULSE_DEV_EMAIL を設定するとメモリ上で擬似ログイン)
+    if (req.url === "/api/me") return send(res, 200, { login: !!process.env.ARCHPULSE_DEV_EMAIL, email: process.env.ARCHPULSE_DEV_EMAIL || null });
+    if (req.url === "/api/lib" && process.env.ARCHPULSE_DEV_EMAIL) {
+      if (req.method === "PUT") { devLib = JSON.parse((await body(req)) || "{}").lib || []; return send(res, 200, { ok: true }); }
+      return send(res, 200, { lib: devLib });
     }
     if (req.method === "GET" && req.url === "/api/health") return send(res, 200, { ok: true, model: MODEL });
     // 静的配信

@@ -20,6 +20,7 @@
 | 縦/横の切替 | 流れを縦向き(既定)/横向きで切替。選択はブラウザに保存 |
 | 自動フィット | 表示領域に合わせて自動で縮小/拡大(スクロール不要)。− FIT + で手動調整 |
 | 過去の図の一覧 | 左フレームに作成した図が溜まる(最大30件、ブラウザ内保存)。クリックで開いて続きの修正ができ、「HTML」で単体HTML保存、「削除」で消せる |
+| DB・ストレージの円柱表示 | `kind` が `db` / `storage` のノードは円柱で描かれる |
 | 版管理 | 元に戻す/やり直し(ブラウザに最大12版保存) |
 | 書き出し | 単体HTML(アニメ+役割+設計書を1ファイル)、設計書.md |
 | 負荷を急増 | 10秒間、流入が4倍。キューの滞留やワーカー詰まりが見える |
@@ -98,6 +99,28 @@ npx wrangler secret put ANTHROPIC_API_KEY
 
 - 制限値や `wrangler.toml` の変数を変えたら再度 `npx wrangler deploy`。
 - `*.s-quad.com` は自宅向けのワイルドカードDNSがあるが、カスタムドメインは個別のDNSレコードが優先されるため影響しない(ワイルドカード自体は変更していない)。
+
+## ログイン(Cloudflare Access)と履歴の保存
+
+公開版は、未ログインでも「お試し」(回数制限つき)で使える。ログインすると、履歴(過去の図)がサーバーに保存されて端末をまたいで見られ、回数上限も増える(メール単位で チャット100・仕様書40/日)。
+
+方式: Cloudflare Access(メールに届く確認コード)。Workerは、Accessが発行するJWTの署名・期限・AUDを検証してメールアドレスを得る(アプリ側にパスワードは無い)。履歴はKVに `lib:<メール>` で保存し、ブラウザ側の履歴とID単位でマージする(新しい方が勝つ、削除は墓標で同期)。
+
+設定手順(Cloudflareのダッシュボード。初回のみ):
+
+1. Zero Trust を有効化(無料枠は50ユーザーまで。チーム名を決める → `チーム名.cloudflareaccess.com` ができる)。
+2. Zero Trust → Access → Applications → Add → Self-hosted。
+   - Application domain: `archpulse.s-quad.com`、Path: `login`(この1パスだけ保護する。他は未ログインでも使えるまま)
+   - Policy: Allow、Include に使わせたいメールアドレス(または `@会社.co.jp` のドメイン)。ログイン方法は「One-time PIN」。
+3. 作成したアプリの **Application Audience (AUD) Tag** をコピー。
+4. `worker/wrangler.toml` の `[vars]` に設定して `npx wrangler deploy`:
+   ```toml
+   ACCESS_TEAM_DOMAIN = "チーム名.cloudflareaccess.com"
+   ACCESS_AUD = "コピーしたAUDタグ"
+   ```
+5. 画面右上に「ログイン」が出る。押すとメールの確認コード → ログイン後はトップに戻り、メールアドレスと「ログアウト」が出る。
+
+`ACCESS_TEAM_DOMAIN` / `ACCESS_AUD` が空のままなら、ログイン機能は無効(従来どおり未ログイン運用のみ)。ローカル版(Docker)にはログインは無い(動作確認用に `ARCHPULSE_DEV_EMAIL` で擬似ログインできる)。
 
 ## ファイル構成
 

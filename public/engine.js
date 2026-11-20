@@ -2,7 +2,7 @@
 // cache=ヒットすると戻る / queue=溜めて順次渡す / worker=処理中+待ち / lb=振り分け / fanout=複製 / filter=遮断 / batch=まとめ送り / label=札付け
 (function (root) {
   var COLORS = { blue: "--k8s", teal: "--info", amber: "--loki", red: "--err", purple: "--purple", gray: "--muted" };
-  var KIND_COLOR = { pod: "blue", file: "gray", agent: "amber", db: "amber", service: "teal", queue: "purple", user: "purple", cloud: "blue", generic: "gray" };
+  var KIND_COLOR = { pod: "blue", file: "gray", agent: "amber", db: "amber", storage: "amber", service: "teal", queue: "purple", user: "purple", cloud: "blue", generic: "gray" };
   var NW = 190, NH = 112, CW = 270, RH = 150, MX = 70, MT = 80, MB = 50, SP = 230;
   var TYPES = { pass: 1, cache: 1, queue: 1, worker: 1, lb: 1, fanout: 1, filter: 1, batch: 1, label: 1 };
 
@@ -50,6 +50,15 @@
     function col(name) { return css[COLORS[name] || "--muted"] || css["--muted"]; }
     function nodeCol(n) { return col(n.d.color || KIND_COLOR[n.d.kind] || "gray"); }
     function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+    // DB・ストレージは円柱で描く
+    var CYL = { db: 1, storage: 1 }, CRY = 13;
+    function isCyl(n) { return !!CYL[n.d.kind]; }
+    function cyl(x, y, w, h) {
+      ctx.beginPath(); ctx.moveTo(x, y + CRY); ctx.ellipse(x + w / 2, y + CRY, w / 2, CRY, 0, Math.PI, Math.PI * 2);
+      ctx.lineTo(x + w, y + h - CRY); ctx.ellipse(x + w / 2, y + h - CRY, w / 2, CRY, 0, 0, Math.PI); ctx.closePath();
+    }
+    function rim(x, y, w) { ctx.beginPath(); ctx.ellipse(x + w / 2, y + CRY, w / 2, CRY, 0, 0, Math.PI); }
+    function shape(n) { if (isCyl(n)) cyl(n.x, n.y, NW, NH); else rr(n.x, n.y, NW, NH, 12); }
     function text(s, x, y, size, color, align, mono, weight, maxW) {
       ctx.font = (weight || 400) + " " + size + "px " + (mono ? '"IBM Plex Mono",ui-monospace,Menlo,monospace' : '"Noto Sans JP",system-ui,-apple-system,"Hiragino Sans",sans-serif');
       ctx.fillStyle = color; ctx.textAlign = align || "left"; ctx.textBaseline = "middle";
@@ -215,9 +224,11 @@
       });
       Object.keys(nodes).forEach(function (id) {
         var n = nodes[id], c = nodeCol(n), g = 0.45 * glow(n.hit, 1.2);
-        ctx.save(); if (g > 0) { ctx.shadowColor = c; ctx.shadowBlur = 10 * g; } rr(n.x, n.y, NW, NH, 12); ctx.fillStyle = css["--panel"]; ctx.fill(); ctx.restore();
-        rr(n.x, n.y, NW, NH, 12); ctx.lineWidth = 1.5; ctx.strokeStyle = css["--line"]; ctx.stroke();
-        if (g > 0.01) { ctx.globalAlpha = Math.min(1, g * 1.6); ctx.strokeStyle = c; ctx.stroke(); ctx.globalAlpha = 1; }
+        ctx.save(); if (g > 0) { ctx.shadowColor = c; ctx.shadowBlur = 10 * g; } shape(n); ctx.fillStyle = css["--panel"]; ctx.fill(); ctx.restore();
+        if (isCyl(n)) { ctx.save(); ctx.beginPath(); ctx.ellipse(n.cx, n.y + CRY, NW / 2, CRY, 0, 0, Math.PI * 2); ctx.globalAlpha = 0.14; ctx.fillStyle = c; ctx.fill(); ctx.restore(); }
+        shape(n); ctx.lineWidth = 1.5; ctx.strokeStyle = css["--line"]; ctx.stroke();
+        if (isCyl(n)) { rim(n.x, n.y, NW); ctx.stroke(); }
+        if (g > 0.01) { ctx.globalAlpha = Math.min(1, g * 1.6); ctx.strokeStyle = c; shape(n); ctx.stroke(); if (isCyl(n)) { rim(n.x, n.y, NW); ctx.stroke(); } ctx.globalAlpha = 1; }
         ctx.beginPath(); ctx.arc(n.x + 16, n.y + 16, 4.5, 0, 7); ctx.fillStyle = c; ctx.fill();
         text((n.type !== "pass" ? n.type : n.d.kind || "").toUpperCase(), n.x + 28, n.y + 16, 10, css["--muted"], "left", true, 500);
         text(n.d.label || n.d.id, n.x + NW / 2, n.y + 31, 15, css["--fg"], "center", false, 700, NW - 20);

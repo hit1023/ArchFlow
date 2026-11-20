@@ -9,17 +9,22 @@ routes = [{ pattern = "archpulse.s-quad.com", custom_domain = true }]
 [assets]
 directory = "../public"
 binding = "ASSETS"
-run_worker_first = ["/api/*"]
+run_worker_first = ["/api/*", "/login"]
 
 [ai]
 binding = "AI"
 
 [vars]
+# Cloudflare Access ログイン(両方入れると有効。空なら未ログイン運用のみ)
+ACCESS_TEAM_DOMAIN = ""   # 例: yourteam.cloudflareaccess.com
+ACCESS_AUD = ""           # AccessアプリケーションのAUDタグ
 LLM_PROVIDER = "auto"          # auto: ANTHROPIC_API_KEY があればClaude、なければWorkers AI / anthropic / workers-ai
 ANTHROPIC_MODEL = "claude-sonnet-5-5"
 WORKERS_AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
 # 認証なし公開のため、1日あたりの回数制限(IPごと / 全体)
 LIMIT_CHAT = "20"
+LIMIT_USER_CHAT = "100"          # ログイン済み(メール単位)
+LIMIT_USER_DOC = "40"
 LIMIT_DOC = "10"
 LIMIT_GLOBAL_CHAT = "400"
 LIMIT_GLOBAL_DOC = "150"

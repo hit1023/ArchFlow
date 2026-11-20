@@ -13,6 +13,7 @@ const SYSTEM = `あなたは「動的アーキテクチャ図」の設計者で�
 - ユーザーが指定した製品(AWS等のマネージドを含む)は、そのまま product に使う。選定理由は reply と仕様書で説明できるようにする。
 - label は「何をするものか」が分かる具体名にする。「ワーカー1」「サービスA」だけにせず、「注文処理ワーカー」「画像変換ワーカー」「ログ整形ワーカー」のように処理内容を入れる(複数台なら「注文処理ワーカー 1」)。role にも何を処理するかを書く。
 - 線(edges)は「実際にその製品が相手へ送れる」向きだけ引く。PostgreSQL等のDB・Redis・ストレージは自分からメッセージを発行・送信できないので、DBからキュー/トピック/他サービスへ線を出さない。「保存後に通知する」場合は、DBに書いたアプリ(API/サービス)が通知を発行する形にするか、中継(Debezium等のCDC、アウトボックス中継、LISTEN/NOTIFY受信アプリ)のノードを間に置く。現実に成り立たない接続は作らない。
+- kind は DB(PostgreSQL/MySQL/MongoDB等)なら "db"、オブジェクト/ファイルストレージ(S3/MinIO/NFS等)なら "storage" にする(画面では円柱で描かれる)。キュー/キャッシュは db にしない。
 - 全てのノードに product を付ける(図の中に製品名が表示される)。自作アプリは "Node.js アプリ" のように実装技術、利用者側は "ブラウザ" 等とする。
 
 # JSON仕様(spec)
@@ -21,7 +22,7 @@ const SYSTEM = `あなたは「動的アーキテクチャ図」の設計者で�
   "columnLabels":["① 入口","② ..."],                 // 任意。列番号順
   "nodes":[
     {"id":"英数字ハイフン","label":"表示名(14文字以内)","sub":"補足(任意)",
-     "kind":"pod|file|agent|db|service|queue|user|cloud|generic",
+     "kind":"pod|file|agent|db|storage|service|queue|user|cloud|generic",
      "color":"blue|teal|amber|red|purple|gray",       // 任意
      "col":0,"row":0,                                  // 格子配置(小数可)。左から右へ流れるよう列を増やす
      "counter":"件",                                   // 任意。到達数を表示(終点やユーザーに付ける)

@@ -45,6 +45,10 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;
 .brand svg{filter:drop-shadow(0 0 8px var(--glow))}
 .brand b{font-family:var(--font-disp);font-weight:700;letter-spacing:.22em;font-size:1.05rem;background:linear-gradient(90deg,var(--a1),var(--a2));-webkit-background-clip:text;background-clip:text;color:transparent}
 .tag{color:var(--muted);font-size:.78rem;letter-spacing:.04em}
+.acct{font-size:.76rem;color:var(--fg);border:1px solid var(--line);border-radius:999px;padding:5px 14px;text-decoration:none;background:var(--glass)}
+.acct:hover{border-color:var(--a1);box-shadow:0 0 0 3px var(--glow)}
+.acct.who{display:flex;gap:10px;align-items:center;font-family:var(--font-mono);font-size:.7rem}.acct.who a{color:var(--muted);text-decoration:none}.acct.who a:hover{color:var(--a1)}
+.acct[hidden]{display:none!important}
 .chip{margin-left:auto;font-family:var(--font-mono);font-size:.7rem;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 12px;display:flex;align-items:center;gap:7px}
 .chip::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--info);box-shadow:0 0 10px var(--info);animation:pulse 2s infinite}
 @keyframes pulse{50%{opacity:.35}}
@@ -137,6 +141,8 @@ summary{cursor:pointer;color:var(--muted);font-size:.84rem}
     </div>
     <span class="tag">構成が脈打つ、動くアーキテクチャ図</span>
     <span class="chip" id="llm">LLM</span>
+    <a class="acct" id="loginbtn" href="/login" hidden>ログイン</a>
+    <span class="acct who" id="whoami" hidden><span id="whomail"></span><a href="/cdn-cgi/access/logout">ログアウト</a></span>
   </header>
   <div class="app">
     <aside>
@@ -209,7 +215,7 @@ function md(src){
 }
 (function(){
   var $=function(i){return document.getElementById(i)};
-  var lib=[], curId=null, hist=[], idx=-1, eng=null, speeds=[1,2,.5], si=0, newMode=false, chat=[], docToken=0;
+  var user=null, syncT=0, lib=[], curId=null, hist=[], idx=-1, eng=null, speeds=[1,2,.5], si=0, newMode=false, chat=[], docToken=0;
   var START=["Webリクエストの流れ","CI/CD","メッセージキュー"];
   var STARTP=["ユーザーのリクエストがCDN、ロードバランサー、Webサーバー2台、DBの順に流れる図。たまに5xxエラーも流れる。","開発者のgit pushからCIでのテスト、Dockerイメージ作成、レジストリ、本番へのデプロイまでの流れ。テスト失敗も流れる。","注文サービスがキューにメッセージを積み、ワーカー3台が取り出して処理し、結果をDBに保存する図。"];
   var FOLLOW=["ボトルネックはどこ？","Webサーバーを3台に増やして","このキャッシュにRedisを使う理由は？","WAFを入口に追加して"];
@@ -222,18 +228,41 @@ function md(src){
   function persist(){
     syncLib();
     ls('archflow.state3',JSON.stringify({idx:idx,curId:curId,hist:hist.slice(-12).map(function(h){return{spec:h.spec,doc:h.doc,req:h.req}})}));
-    ls('archpulse.lib',JSON.stringify(lib.slice(0,30)));
+    ls('archpulse.lib',JSON.stringify(lib.slice(0,60)));
+    pushServer();
+  }
+  function liveLib(){return lib.filter(function(x){return !x.del})}
+  function pushServer(){
+    if(!user)return; clearTimeout(syncT);
+    syncT=setTimeout(function(){fetch('/api/lib',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({lib:lib.slice(0,60)})}).catch(function(){})},2000);
+  }
+  function mergeLib(remote){
+    var m={}, cut=Date.now()-30*864e5;
+    lib.concat(remote||[]).forEach(function(x){if(!x||!x.id)return;var o=m[x.id];if(!o||(x.upd||x.ts||0)>(o.upd||o.ts||0))m[x.id]=x});
+    lib=Object.keys(m).map(function(k){return m[k]}).filter(function(x){return !(x.del&&(x.upd||0)<cut)}).sort(function(a,b){return (b.upd||b.ts||0)-(a.upd||a.ts||0)});
+  }
+  async function initAuth(){
+    try{
+      var me=await (await fetch('/api/me')).json();
+      if(!me.login)return;
+      if(!me.email){$('loginbtn').hidden=false;return}
+      user=me.email; $('whomail').textContent=user; $('whoami').hidden=false;
+      var r=await fetch('/api/lib'); if(!r.ok)return; mergeLib((await r.json()).lib);
+      ls('archpulse.lib',JSON.stringify(lib.slice(0,60))); renderLib(); pushServer();
+    }catch(e){}
   }
   function syncLib(){
     var e=cur(); if(!e||!curId)return; var it=lib.filter(function(x){return x.id===curId})[0];
     if(!it){it={id:curId};lib.unshift(it)}
+    it.del=false;
     it.title=e.spec.title||'無題'; it.subtitle=e.spec.subtitle||''; it.spec=e.spec; it.doc=e.doc; it.req=e.req; it.ts=it.ts||Date.now(); it.upd=Date.now();
   }
   function fmt(t){var d=new Date(t||Date.now());return (d.getMonth()+1)+'/'+d.getDate()+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
   function renderLib(){
-    var box=$('lib'); box.innerHTML=''; $('libcount').textContent=lib.length?'('+lib.length+')':'';
-    if(!lib.length){var n=document.createElement('div');n.className='none';n.textContent='作成した図がここに溜まります。';box.appendChild(n);return}
-    lib.forEach(function(it){
+    var box=$('lib'); box.innerHTML=''; var L=liveLib(); $('libcount').textContent=L.length?'('+L.length+')':'';
+    if(!L.length){var n=document.createElement('div');n.className='none';n.textContent='作成した図がここに溜まります。';box.appendChild(n)}
+    if(!user&&!$('loginbtn').hidden){var n2=document.createElement('div');n2.className='none';n2.innerHTML='<a href="/login" style="color:var(--a1)">ログイン</a>すると、履歴が端末をまたいで保存されます。';box.appendChild(n2)}
+    L.forEach(function(it){
       var row=document.createElement('div');row.className='li'+(it.id===curId?' on':'');
       var o=document.createElement('button');o.type='button';o.className='open';o.innerHTML='<b></b><span></span>';
       o.firstChild.textContent=it.title;o.lastChild.textContent=fmt(it.upd||it.ts)+' ・ '+it.spec.nodes.length+'部品';
@@ -249,7 +278,7 @@ function md(src){
     curId=id; hist=[{spec:it.spec,doc:it.doc||null,req:it.req||''}]; idx=0; newMode=false; chat=[]; render(); chips(); say('「'+it.title+'」を開きました。続けて修正依頼や質問ができます。','s');
   }
   function delLib(id){
-    lib=lib.filter(function(x){return x.id!==id}); ls('archpulse.lib',JSON.stringify(lib)); renderLib();
+    lib.forEach(function(x){if(x.id===id){x.del=true;x.upd=Date.now();x.spec={nodes:[]};x.doc=null}}); ls('archpulse.lib',JSON.stringify(lib)); renderLib(); pushServer();
   }
   function render(){
     var e=cur(); if(!e)return; var s=e.spec;
@@ -338,7 +367,7 @@ function md(src){
       try{var r=await fetch('/sample.md');if(r.ok)doc=await r.text()}catch(e){}
       hist=[{spec:s,doc:doc,req:'Kubernetes の Pod のログが Loki に届くまでの流れ(サンプル)'}];idx=0;
     }
-    render(); chips();
+    render(); chips(); initAuth();
   })();
 })();
 </script>
