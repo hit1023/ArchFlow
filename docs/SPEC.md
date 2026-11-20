@@ -1,6 +1,6 @@
-# ArchFlow 仕様書
+# ARCHPULSE(hit-archflow)仕様書
 
-版: 2026-11-21 / 対象: hit-archflow(Node 22、`claude` CLI headless、canvas)
+版: 2026-11-21 / 対象: hit-archflow(Node 22 + `claude` CLI headless、および Cloudflare Workers版、canvas)
 
 ## 1. 目的とスコープ
 
@@ -31,6 +31,15 @@ Claude(CLAUDE_CODE_OAUTH_TOKEN で認証)
 - **図と設計書は別リクエスト。** 図は短時間で出してすぐ動かし、設計書(長文)は非同期で後から埋める。設計書はJSONではなくMarkdownをそのまま返させるため、エスケープ事故がない。
 - **ツールを与えない(`--tools ""`)。** 図の生成にファイル・コマンド実行は不要で、安全側に倒す。
 - 依存ゼロ(Node標準モジュールのみ)。Markdown描画もブラウザ側の自前実装。
+
+### 2.1 Cloudflare Workers版
+
+`worker/src/index.js` が `/api/chat` `/api/doc` `/api/health` を処理し、他は静的アセット(`public/`、`run_worker_first=["/api/*"]`)。プロンプト・検証は `core.js` をNode版と共有する。
+
+- LLM切替: `ANTHROPIC_API_KEY` secretあり → Anthropic API(claude-sonnet-5-5)、なし → Workers AI(Llama 3.3 70B fp8 fast)。`/api/health` が `{provider, model}` を返し、UIのチップに表示。
+- 回数制限(KV): IPごと/日 チャット20・仕様書10、全体/日 400・150。認証なし。
+- Workerの時間制限対策として、応答は空白を8秒ごとに出すストリーミングJSON。失敗は `{error}` をHTTP 200で返し、クライアントは `!r.ok || j.error` で判定。
+- 公開URL: https://archpulse.hitoshi-nakayama-1023.workers.dev
 
 ## 3. 図JSON(spec)スキーマ
 
@@ -86,8 +95,9 @@ Claude(CLAUDE_CODE_OAUTH_TOKEN で認証)
 
 ## 4. 描画・シミュレーションエンジン(engine.js)
 
-- 入力: canvas と spec。出力: `{setPaused,isPaused,setSpeed,burst,destroy}`。
-- レイアウト: 列幅270、行高150、ノード190×112(論理座標)。canvas幅に合わせて拡縮。幅760px未満は横スクロール。
+- 入力: canvas と spec。出力: `{size,autoFit,refit,zoomBy,zoomReset,setPaused,isPaused,setSpeed,burst,destroy}`。
+- レイアウト: 列幅270、行高150、ノード190×112(論理座標)。**自動フィット**: 倍率 = clamp(min(幅/図幅, 高さ/図高), 0.5, 1.5) × 手動ズーム。ResizeObserverで追従し、スクロール不要を基本とする。UIの − FIT + で手動調整。
+- ノード内に製品名(`product`)をピル表示(アクセント枠)。
 - 粒の移動: 直線(ノード中心間)を秒速230(論理px)。ノード内では描画せず、ノード内部の可視化(キュー=セル、ワーカー=リング、キャッシュ=スロット+HIT率)で表現。ヒット後の戻り粒は線から9px横にずらして描く(往路と重ならない)。
 - 初期状態: 300ステップ(約10秒分)を先に回してから表示し、開いた瞬間から流れている状態にする。
 - 色: CSS変数(`--k8s` `--info` `--loki` `--err` `--purple` 等)から取得。ライト/ダーク追従。単体HTML書き出しでは現在の値を埋め込む。
@@ -146,7 +156,7 @@ Claude(CLAUDE_CODE_OAUTH_TOKEN で認証)
 |---|---|
 | 応答時間 | 図: 7〜60秒(構成の複雑さによる)、設計書: 1〜2分 |
 | コスト | 1リクエストごとに`claude -p`を1回実行(図)、設計書で1回。トークンはサブスクリプション/OAuthトークンに計上 |
-| 認証 | なし。公開時は前段で必須 |
+| 認証 | なし(Workers版はIP/全体の回数制限のみ)。ローカル版を公開する場合は前段で必須 |
 | セキュリティ | LLMにツールを与えない。入力は4000文字制限。表示は全てエスケープ(Markdown描画も`esc`後に整形) |
 | 可用性 | `restart: unless-stopped`。状態はブラウザ側のみでサーバーはステートレス(`/data`は`claude`の設定置き場) |
 | ポート | 8897(コンテナ内8080)。h-1上のorb-hologramが8897を使っているため、h-1へ移す際は要変更 |
@@ -157,4 +167,4 @@ Claude(CLAUDE_CODE_OAUTH_TOKEN で認証)
 - 1ノードに付けられるbehaviorは1つ(例: 「ラベル付け+バッチ」は2ノードに分ける)。
 - エッジは直線のみ。交差の多い図は配置(col/row)をLLMに修正させる。
 - 設計書は図の変更ごとに自動再生成する(約1〜2分)。差分更新は未対応。
-- 未実施: git管理、h-1/gateでの公開(認証設計が先)、スマホ幅の検証。
+- 未実施: h-1/gateでの公開、スマホ幅・ライトテーマの目視検証、Worker上のAnthropic切替と修正依頼パスの検証、独自ドメイン。

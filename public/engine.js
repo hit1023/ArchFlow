@@ -181,6 +181,7 @@
       var dpr = window.devicePixelRatio || 1, cw = canvas.clientWidth, ch = Math.round(cw * H / W);
       if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) { canvas.width = Math.round(cw * dpr); canvas.height = Math.round(ch * dpr); canvas.style.height = ch + "px"; }
       var s = cw / W; ctx.setTransform(dpr * s, 0, 0, dpr * s, 0, 0); ctx.clearRect(0, 0, W, H);
+      ctx.globalAlpha = 0.5; ctx.fillStyle = css["--line"]; for (var gx = 15; gx < W; gx += 30) for (var gy = 15; gy < H; gy += 30) ctx.fillRect(gx, gy, 1.4, 1.4); ctx.globalAlpha = 1;
       (spec.columnLabels || []).forEach(function (l, i) { text(l, MX + i * CW + NW / 2, 36, 15, css["--muted"], "center", false, 500, CW - 20); });
       (spec.groups || []).forEach(function (g) {
         var ns = g.nodes.map(function (id) { return nodes[id]; }).filter(Boolean); if (!ns.length) return;
@@ -205,9 +206,13 @@
         rr(n.x, n.y, NW, NH, 12); ctx.lineWidth = 1.5; ctx.strokeStyle = g > 0.05 ? c : css["--line"]; ctx.stroke();
         ctx.beginPath(); ctx.arc(n.x + 16, n.y + 16, 4.5, 0, 7); ctx.fillStyle = c; ctx.fill();
         text((n.type !== "pass" ? n.type : n.d.kind || "").toUpperCase(), n.x + 28, n.y + 16, 10, css["--muted"], "left", true, 500);
-        text(n.d.label || n.d.id, n.x + NW / 2, n.y + 36, 15, css["--fg"], "center", false, 700, NW - 20);
+        text(n.d.label || n.d.id, n.x + NW / 2, n.y + 31, 15, css["--fg"], "center", false, 700, NW - 20);
         var viz = n.type !== "pass";
-        if (n.d.product) text(n.d.product, n.x + NW / 2, n.y + 54, 11, css["--muted"], "center", true, 400, NW - 20);
+        if (n.d.product) {
+          ctx.font = "500 11.5px 'IBM Plex Mono',ui-monospace,monospace"; var pw = Math.min(NW - 24, ctx.measureText(n.d.product).width + 20);
+          rr(n.cx - pw / 2, n.y + 43, pw, 18, 9); ctx.globalAlpha = 0.16; ctx.fillStyle = c; ctx.fill(); ctx.globalAlpha = 1; ctx.lineWidth = 1; ctx.strokeStyle = c; ctx.stroke();
+          text(n.d.product, n.cx, n.y + 52.5, 11.5, css["--fg"], "center", true, 500, NW - 36);
+        }
         if (viz) { ctx.save(); ctx.translate(0, 12); drawViz(n, c); ctx.restore(); }
         else if (n.d.counter) text(n.count + " " + n.d.counter, n.x + NW / 2, n.y + 86, 13, c, "center", true, 500, NW - 20);
         else if (n.d.sub && !n.d.product) text(n.d.sub, n.x + NW / 2, n.y + 78, 11, css["--muted"], "center", true, 400, NW - 20);
@@ -230,10 +235,21 @@
     var mo = new MutationObserver(readCss); mo.observe(document.documentElement, { attributes: true });
     var mq = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)"); if (mq && mq.addEventListener) mq.addEventListener("change", readCss);
     raf = requestAnimationFrame(frame);
+    var zf = 1, fitBox = null, ro = null;
+    function fitNow() {
+      if (!fitBox) return; var cw = fitBox.clientWidth; if (!cw) return;
+      var top = Math.max(0, fitBox.getBoundingClientRect().top), availH = Math.max(280, window.innerHeight - top - 28);
+      var sc = Math.max(0.5, Math.min(1.5, Math.min((cw - 2) / W, availH / H))) * zf;
+      canvas.style.width = Math.round(W * sc) + "px"; canvas.style.height = Math.round(H * sc) + "px";
+    }
+    function onResize() { fitNow(); }
     return {
+      size: { w: W, h: H },
+      autoFit: function (box) { fitBox = box; canvas.style.margin = "0 auto"; fitNow(); window.addEventListener("resize", onResize); if (window.ResizeObserver) { ro = new ResizeObserver(fitNow); ro.observe(box); } },
+      refit: fitNow, zoomBy: function (f) { zf = Math.max(0.4, Math.min(2.5, zf * f)); fitNow(); }, zoomReset: function () { zf = 1; fitNow(); },
       setPaused: function (p) { paused = p; }, isPaused: function () { return paused; }, setSpeed: function (v) { speed = v; },
       burst: function () { loadMul = 4; loadUntil = now + 10; },
-      destroy: function () { cancelAnimationFrame(raf); mo.disconnect(); }
+      destroy: function () { cancelAnimationFrame(raf); mo.disconnect(); window.removeEventListener("resize", onResize); if (ro) ro.disconnect(); }
     };
   }
   root.ArchFlow = ArchFlow;

@@ -3,110 +3,167 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ArchFlow</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<title>ARCHPULSE</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b1220'/%3E%3Cpath d='M3 17h6l3-9 5 17 3-8h9' fill='none' stroke='%2322d3ee' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap">
 <style>
+/* ARCHPULSE: dark-first の「コントロールルーム」。グリッド背景+ガラス調パネル+シアン→バイオレットの発光アクセント */
 :root{
-  --bg:#f3f5f8; --panel:#ffffff; --fg:#14202e; --muted:#5d6b7d; --line:#c9d2dd;
-  --k8s:#2f6fed; --info:#13a58a; --loki:#e08a00; --warn:#d99a00; --err:#e0453a; --purple:#8a5cf5;
+  --bg:#eef2f9; --bg2:#e3e9f4; --panel:#ffffff; --fg:#0f1b2d; --muted:#5a6b85; --line:#cdd6e5;
+  --k8s:#2f6bff; --info:#0fa58a; --loki:#d98200; --warn:#c98f00; --err:#e03a5a; --purple:#7a4bf0;
+  --a1:#0aa5c2; --a2:#7a4bf0; --glass:rgba(255,255,255,.72); --glow:rgba(47,107,255,.18);
   --font-ui:"Noto Sans JP",system-ui,-apple-system,"Hiragino Sans",sans-serif;
+  --font-disp:"Space Grotesk","Noto Sans JP",system-ui,sans-serif;
   --font-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0d141d; --panel:#162130; --fg:#e7edf5; --muted:#8fa0b4; --line:#2b3a4e;
-  --k8s:#6b9bff; --info:#3ddbb8; --loki:#ffb02e; --warn:#f2c14e; --err:#ff6b5e; --purple:#b093ff; color-scheme:dark}}
+:root{color-scheme:dark;
+  --bg:#060a14; --bg2:#0a1120; --panel:rgba(16,25,44,.78); --fg:#e9f1ff; --muted:#8497b8; --line:#1f2e4a;
+  --k8s:#5b8cff; --info:#2de2c0; --loki:#ffb347; --warn:#ffd166; --err:#ff5c7a; --purple:#a78bfa;
+  --a1:#22d3ee; --a2:#8b5cf6; --glass:rgba(14,22,40,.66); --glow:rgba(34,211,238,.22);}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){color-scheme:light;
+  --bg:#eef2f9; --bg2:#e3e9f4; --panel:#ffffff; --fg:#0f1b2d; --muted:#5a6b85; --line:#cdd6e5;
+  --k8s:#2f6bff; --info:#0fa58a; --loki:#d98200; --warn:#c98f00; --err:#e03a5a; --purple:#7a4bf0;
+  --a1:#0aa5c2; --a2:#7a4bf0; --glass:rgba(255,255,255,.72); --glow:rgba(47,107,255,.16)}}
+:root[data-theme="light"]{color-scheme:light;
+  --bg:#eef2f9; --bg2:#e3e9f4; --panel:#ffffff; --fg:#0f1b2d; --muted:#5a6b85; --line:#cdd6e5;
+  --k8s:#2f6bff; --info:#0fa58a; --loki:#d98200; --warn:#c98f00; --err:#e03a5a; --purple:#7a4bf0;
+  --a1:#0aa5c2; --a2:#7a4bf0; --glass:rgba(255,255,255,.72); --glow:rgba(47,107,255,.16)}
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-ui);font-size:14px}
-.app{display:grid;grid-template-columns:350px minmax(0,1fr);height:100%}
-aside{display:flex;flex-direction:column;gap:10px;padding:18px;border-right:1px solid var(--line);background:var(--panel);min-height:0}
-h1{font-size:1.15rem;margin:0;letter-spacing:.02em}
-.hint{color:var(--muted);font-size:.8rem;line-height:1.6;margin:0}
-.log{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px}
-.msg{padding:8px 10px;border-radius:8px;font-size:.84rem;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
-.msg.u{background:var(--bg);border:1px solid var(--line)}
-.msg.a{color:var(--fg);border-left:3px solid var(--k8s);padding-left:10px}
-.msg.s{color:var(--muted);font-size:.78rem}
-.msg.e{color:var(--err)}
-textarea{width:100%;resize:vertical;min-height:84px;max-height:240px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit;line-height:1.6}
-textarea:focus-visible,button:focus-visible{outline:2px solid var(--k8s);outline-offset:2px}
-button{font:inherit;font-size:.85rem;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 13px;cursor:pointer}
-button:hover:not(:disabled){border-color:var(--k8s)}
-button:disabled{opacity:.45;cursor:default}
-button.primary{background:var(--k8s);border-color:var(--k8s);color:#fff;font-weight:500}
+body{margin:0;color:var(--fg);font-family:var(--font-ui);font-size:14px;
+  background:
+    radial-gradient(900px 500px at 8% -10%,color-mix(in srgb,var(--a1) 16%,transparent),transparent 70%),
+    radial-gradient(800px 500px at 100% 0%,color-mix(in srgb,var(--a2) 16%,transparent),transparent 70%),
+    linear-gradient(var(--bg),var(--bg2));
+  background-color:var(--bg);background-attachment:fixed}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:44px 44px;-webkit-mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 75%);mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 75%)}
+.shell{position:relative;display:flex;flex-direction:column;height:100%}
+.topbar{display:flex;align-items:center;gap:14px;padding:12px 22px;border-bottom:1px solid var(--line);background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.brand{display:flex;align-items:center;gap:10px}
+.brand svg{filter:drop-shadow(0 0 8px var(--glow))}
+.brand b{font-family:var(--font-disp);font-weight:700;letter-spacing:.22em;font-size:1.05rem;background:linear-gradient(90deg,var(--a1),var(--a2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.tag{color:var(--muted);font-size:.78rem;letter-spacing:.04em}
+.chip{margin-left:auto;font-family:var(--font-mono);font-size:.7rem;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 12px;display:flex;align-items:center;gap:7px}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--info);box-shadow:0 0 10px var(--info);animation:pulse 2s infinite}
+@keyframes pulse{50%{opacity:.35}}
+.app{flex:1;min-height:0;display:grid;grid-template-columns:360px minmax(0,1fr)}
+aside{display:flex;flex-direction:column;gap:10px;padding:16px;border-right:1px solid var(--line);background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);min-height:0}
+.hint{color:var(--muted);font-size:.8rem;line-height:1.65;margin:0}
+.label{font-family:var(--font-mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.log{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px;padding-right:2px}
+.msg{padding:9px 12px;border-radius:10px;font-size:.84rem;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.u{background:color-mix(in srgb,var(--a2) 14%,transparent);border:1px solid color-mix(in srgb,var(--a2) 35%,var(--line))}
+.msg.a{background:color-mix(in srgb,var(--a1) 9%,transparent);border:1px solid color-mix(in srgb,var(--a1) 28%,var(--line))}
+.msg.s{color:var(--muted);font-size:.76rem;padding:2px 4px}
+.msg.e{color:var(--err);border:1px solid color-mix(in srgb,var(--err) 40%,var(--line));background:color-mix(in srgb,var(--err) 8%,transparent)}
+textarea{width:100%;resize:vertical;min-height:82px;max-height:240px;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:color-mix(in srgb,var(--bg) 70%,transparent);color:var(--fg);font:inherit;line-height:1.6}
+textarea:focus{outline:none;border-color:var(--a1);box-shadow:0 0 0 3px var(--glow)}
+button{font:inherit;font-size:.82rem;color:var(--fg);background:color-mix(in srgb,var(--panel) 85%,transparent);border:1px solid var(--line);border-radius:999px;padding:7px 15px;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .1s}
+button:hover:not(:disabled){border-color:var(--a1);box-shadow:0 0 0 3px var(--glow)}
+button:active:not(:disabled){transform:translateY(1px)}
+button:focus-visible{outline:2px solid var(--a1);outline-offset:2px}
+button:disabled{opacity:.4;cursor:default}
+button.primary{border:0;color:#04101c;font-weight:700;background:linear-gradient(90deg,var(--a1),var(--a2));box-shadow:0 4px 22px var(--glow)}
+button.primary:hover:not(:disabled){box-shadow:0 4px 30px var(--glow),0 0 0 3px var(--glow)}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chips button{font-size:.76rem;padding:4px 10px;color:var(--muted)}
-.mode{font-size:.78rem;color:var(--muted)}
-main{display:flex;flex-direction:column;gap:12px;padding:18px;min-width:0;min-height:0;overflow:auto}
-main h2{margin:0;font-size:1.3rem;text-wrap:balance}
-main p.sub{margin:2px 0 0;color:var(--muted)}
-.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
-.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:8px 14px;color:var(--muted)}
-.tabs button[aria-selected=true]{color:var(--fg);border-bottom-color:var(--k8s);font-weight:700}
-.stage{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
-canvas{display:block;min-width:760px;width:100%}
+.chips button{font-size:.74rem;padding:4px 11px;color:var(--muted)}
+.mode{font-family:var(--font-mono);font-size:.7rem;color:var(--muted)}
+main{display:flex;flex-direction:column;gap:12px;padding:18px 22px;min-width:0;min-height:0;overflow:auto}
+.titlebar h2{margin:0;font-family:var(--font-disp);font-size:1.5rem;letter-spacing:.01em;text-wrap:balance}
+.titlebar p{margin:3px 0 0;color:var(--muted)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .spacer{flex:1}
-.roles{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin-top:12px}
-.role{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
-.role b{display:block;font-size:.88rem}
-.role i{font-style:normal;font-family:var(--font-mono);font-size:.72rem;color:var(--k8s)}
-.role span{display:block;color:var(--muted);font-size:.8rem;line-height:1.55}
-details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-top:12px}
-summary{cursor:pointer;color:var(--muted);font-size:.85rem}
-#json{margin-top:10px;font-family:var(--font-mono);font-size:.78rem;min-height:240px}
-.doc{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 26px 22px;line-height:1.8;max-width:900px}
-.doc h1{font-size:1.4rem;margin:18px 0 8px}.doc h2{font-size:1.1rem;margin:26px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--line)}.doc h3{font-size:.98rem;margin:18px 0 6px}
+.tabs{display:inline-flex;align-self:flex-start;padding:3px;border:1px solid var(--line);border-radius:999px;background:var(--glass)}
+.tabs button{border:0;background:none;border-radius:999px;padding:6px 18px;color:var(--muted)}
+.tabs button:hover:not(:disabled){box-shadow:none;color:var(--fg)}
+.tabs button[aria-selected=true]{color:#04101c;font-weight:700;background:linear-gradient(90deg,var(--a1),var(--a2))}
+.stagewrap{position:relative}
+.stage{position:relative;border-radius:16px;overflow-x:auto;padding:1px;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--a1) 55%,var(--line)),var(--line) 35%,var(--line) 65%,color-mix(in srgb,var(--a2) 55%,var(--line)));
+  box-shadow:0 0 60px -20px var(--glow)}
+.stage .in{background:var(--bg2);border-radius:15px;overflow:hidden;width:max-content;min-width:100%}
+canvas{display:block}
+.zoom{position:absolute;right:12px;top:12px;z-index:2;display:flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:999px;background:var(--glass);backdrop-filter:blur(8px)}
+.zoom button{padding:3px 11px;font-family:var(--font-mono)}
+.roles{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-top:14px}
+.role{background:var(--glass);border:1px solid var(--line);border-radius:12px;padding:11px 13px;min-width:0}
+.role b{display:block;font-size:.9rem}
+.role i{font-style:normal;font-family:var(--font-mono);font-size:.7rem;color:var(--a1);letter-spacing:.04em}
+.role span{display:block;color:var(--muted);font-size:.8rem;line-height:1.55;margin-top:2px}
+details{background:var(--glass);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-top:14px}
+summary{cursor:pointer;color:var(--muted);font-size:.84rem}
+#json{margin-top:10px;font-family:var(--font-mono);font-size:.76rem;min-height:240px}
+.doc{background:var(--glass);border:1px solid var(--line);border-radius:14px;padding:8px 28px 24px;line-height:1.85;max-width:920px}
+.doc h1{font-family:var(--font-disp);font-size:1.5rem;margin:18px 0 8px}.doc h2{font-family:var(--font-disp);font-size:1.12rem;margin:28px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--line)}.doc h3{font-size:.98rem;margin:18px 0 6px}
 .doc p{margin:8px 0}.doc ul,.doc ol{margin:8px 0;padding-left:1.4em}
-.doc code{font-family:var(--font-mono);font-size:.85em;background:var(--bg);padding:1px 5px;border-radius:4px}
-.doc pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;overflow-x:auto}.doc pre code{background:none;padding:0;font-size:.8rem}
-.doc .tw{overflow-x:auto}.doc table{border-collapse:collapse;font-size:.84rem;margin:10px 0}.doc th,.doc td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}.doc th{background:var(--bg)}
+.doc code{font-family:var(--font-mono);font-size:.85em;background:color-mix(in srgb,var(--bg) 70%,transparent);padding:1px 6px;border-radius:5px}
+.doc pre{background:color-mix(in srgb,var(--bg) 80%,transparent);border:1px solid var(--line);border-radius:10px;padding:13px;overflow-x:auto}.doc pre code{background:none;padding:0;font-size:.8rem}
+.doc .tw{overflow-x:auto}.doc table{border-collapse:collapse;font-size:.84rem;margin:10px 0}.doc th,.doc td{border:1px solid var(--line);padding:6px 11px;text-align:left;vertical-align:top}.doc th{background:color-mix(in srgb,var(--a1) 8%,transparent)}
 .empty{color:var(--muted);padding:30px;text-align:center}
 @media (max-width:860px){
-  .app{grid-template-columns:1fr;height:auto}
+  .app{grid-template-columns:1fr;height:auto}.shell{height:auto}
   aside{border-right:0;border-bottom:1px solid var(--line)}
   .log{max-height:220px}
   main{overflow:visible}
   html,body{height:auto}
+  .tag{display:none}
 }
+@media (prefers-reduced-motion:reduce){.chip::before{animation:none}}
 </style>
 </head>
 <body>
-<div class="app">
-  <aside>
-    <div><h1>ArchFlow</h1><p class="hint">構成を日本語で書くと、役割が動きで分かる図と設計書を作ります。作ったあとは、同じ入力欄から修正の依頼も質問もできます。</p></div>
-    <div class="chips" id="chips"></div>
-    <div class="log" id="log" aria-live="polite"></div>
-    <div class="mode" id="mode"></div>
-    <textarea id="prompt" aria-label="メッセージ"></textarea>
-    <div class="row"><button class="primary" id="go" type="button">送信</button><button id="newbtn" type="button">新規作成に切替</button><span class="hint" id="status"></span></div>
-  </aside>
-  <main>
-    <div><h2 id="title"></h2><p class="sub" id="subtitle"></p></div>
-    <div class="row">
-      <button id="toggle" type="button">一時停止</button>
-      <button id="burst" type="button">負荷を急増</button>
-      <button id="speed" type="button">速度 x1</button>
-      <button id="undo" type="button">元に戻す</button>
-      <button id="redo" type="button">やり直し</button>
-      <span class="spacer"></span>
-      <button id="exportMd" type="button">仕様書(.md)を保存</button>
-      <button id="export" type="button">単体HTMLを保存</button>
+<div class="shell">
+  <header class="topbar">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#0b1220" stroke="#22d3ee" stroke-opacity=".5"/><path d="M4 17h6l3-9 5 17 3-8h7" fill="none" stroke="#22d3ee" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <b>ARCHPULSE</b>
     </div>
-    <div class="tabs" role="tablist"><button role="tab" id="tab-fig" aria-selected="true" type="button">アニメ図</button><button role="tab" id="tab-doc" aria-selected="false" type="button">仕様書</button></div>
-    <section id="pane-fig">
-      <div class="stage"><canvas id="c" role="img" aria-label="生成された動的アーキテクチャ図"></canvas></div>
-      <div class="roles" id="roles"></div>
-      <details><summary>図のJSON(直接編集して適用できます)</summary>
-        <textarea id="json" spellcheck="false" aria-label="図のJSON"></textarea>
-        <div class="row" style="margin-top:8px"><button id="apply" type="button">JSONを適用</button><span class="hint" id="jsonstatus"></span></div>
-      </details>
-    </section>
-    <section id="pane-doc" hidden>
-      <div class="row" style="margin-bottom:10px"><button id="gendoc" type="button">仕様書を生成/再生成</button><span class="hint" id="docstatus"></span></div>
-      <article class="doc" id="doc"></article>
-    </section>
-  </main>
+    <span class="tag">構成が脈打つ、動くアーキテクチャ図</span>
+    <span class="chip" id="llm">LLM</span>
+  </header>
+  <div class="app">
+    <aside>
+      <p class="hint">構成を日本語で書くと、役割が動きで分かる図と設計書を作ります。作ったあとは、同じ入力欄から修正の依頼も質問もできます。</p>
+      <div class="chips" id="chips"></div>
+      <div class="label">会話</div>
+      <div class="log" id="log" aria-live="polite"></div>
+      <div class="mode" id="mode"></div>
+      <textarea id="prompt" aria-label="メッセージ"></textarea>
+      <div class="row"><button class="primary" id="go" type="button">送信</button><button id="newbtn" type="button">新規作成に切替</button><span class="hint" id="status"></span></div>
+    </aside>
+    <main>
+      <div class="titlebar"><h2 id="title"></h2><p id="subtitle"></p></div>
+      <div class="tools">
+        <button id="toggle" type="button">一時停止</button>
+        <button id="burst" type="button">負荷を急増</button>
+        <button id="speed" type="button">速度 x1</button>
+        <button id="undo" type="button">元に戻す</button>
+        <button id="redo" type="button">やり直し</button>
+        <span class="spacer"></span>
+        <button id="exportMd" type="button">仕様書(.md)</button>
+        <button id="export" type="button">単体HTML</button>
+      </div>
+      <div class="tabs" role="tablist"><button role="tab" id="tab-fig" aria-selected="true" type="button">アニメ図</button><button role="tab" id="tab-doc" aria-selected="false" type="button">仕様書</button></div>
+      <section id="pane-fig">
+        <div class="stagewrap">
+          <div class="zoom" aria-label="表示サイズ"><button id="zout" type="button" aria-label="縮小">−</button><button id="zfit" type="button">FIT</button><button id="zin" type="button" aria-label="拡大">＋</button></div>
+          <div class="stage" id="stage"><div class="in"><canvas id="c" role="img" aria-label="生成された動的アーキテクチャ図"></canvas></div></div>
+        </div>
+        <div class="roles" id="roles"></div>
+        <details><summary>図のJSON(直接編集して適用できます)</summary>
+          <textarea id="json" spellcheck="false" aria-label="図のJSON"></textarea>
+          <div class="row" style="margin-top:8px"><button id="apply" type="button">JSONを適用</button><span class="hint" id="jsonstatus"></span></div>
+        </details>
+      </section>
+      <section id="pane-doc" hidden>
+        <div class="row" style="margin-bottom:10px"><button id="gendoc" type="button">仕様書を生成/再生成</button><span class="hint" id="docstatus"></span></div>
+        <article class="doc" id="doc"></article>
+      </section>
+    </main>
+  </div>
 </div>
 <script src="/engine.js"></script>
 <script>
@@ -148,7 +205,7 @@ function md(src){
     if(eng)eng.destroy();
     $('title').textContent=s.title||'無題'; $('subtitle').textContent=s.subtitle||'';
     $('json').value=JSON.stringify(s,null,1); $('roles').innerHTML=rolesHtml(s);
-    eng=ArchFlow($('c'),s); eng.setSpeed(speeds[si]); $('toggle').textContent='一時停止';
+    eng=ArchFlow($('c'),s); eng.autoFit($('stage')); eng.setSpeed(speeds[si]); $('toggle').textContent='一時停止';
     $('doc').innerHTML=e.doc?md(e.doc):'<div class="empty">仕様書はまだありません。「仕様書を生成/再生成」を押してください。</div>';
     $('undo').disabled=idx<=0; $('redo').disabled=idx>=hist.length-1;
     $('mode').textContent=newMode?'新規作成モード(次の送信でゼロから作ります)':'この図への修正依頼・質問ができます';
@@ -164,7 +221,7 @@ function md(src){
     $('docstatus').textContent='仕様書を生成中…(1〜2分)'; $('gendoc').disabled=true;
     try{
       var r=await fetch('/api/doc',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({spec:e.spec,request:e.req})});
-      var j=await r.json(); if(!r.ok)throw new Error(j.error||'失敗');
+      var j=await r.json(); if(!r.ok||j.error)throw new Error(j.error||'失敗');
       target.doc=j.doc; if(cur()===target)$('doc').innerHTML=md(j.doc); persist(); $('docstatus').textContent='生成しました';
     }catch(err){$('docstatus').textContent='エラー: '+(err.message||err)}
     $('gendoc').disabled=false;
@@ -175,7 +232,7 @@ function md(src){
     $('go').disabled=true; $('status').textContent='考え中…(10〜60秒)'; say(p,'u'); $('prompt').value='';
     try{
       var r=await fetch('/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({message:p,current:isNew?undefined:e.spec,history:isNew?[]:chat})});
-      var j=await r.json(); if(!r.ok)throw new Error(j.error||'失敗しました');
+      var j=await r.json(); if(!r.ok||j.error)throw new Error(j.error||'失敗しました');
       chat.push({role:'user',text:p},{role:'assistant',text:j.reply}); say(j.reply,'a');
       if(j.spec){ push(j.spec, isNew?p:(e.req+'\n追加依頼: '+p)); chips(); genDoc(); }
     }catch(err){say(String(err.message||err),'e')}
@@ -190,8 +247,10 @@ function md(src){
   $('burst').onclick=function(){eng.burst()};
   $('speed').onclick=function(){si=(si+1)%speeds.length;eng.setSpeed(speeds[si]);$('speed').textContent='速度 x'+speeds[si]};
   $('gendoc').onclick=genDoc;
+  $('zin').onclick=function(){eng.zoomBy(1.18)}; $('zout').onclick=function(){eng.zoomBy(1/1.18)}; $('zfit').onclick=function(){eng.zoomReset()};
+  fetch('/api/health').then(function(r){return r.json()}).then(function(h){$('llm').textContent='LLM · '+(h.provider||'claude')+(h.model?' / '+String(h.model).replace('@cf/meta/',''):'')}).catch(function(){});
   $('apply').onclick=function(){try{var s=JSON.parse($('json').value);if(!s.nodes||!s.nodes.length)throw new Error('nodesがありません');push(s,(cur()?cur().req:'')+'\n(JSON直接編集)');$('jsonstatus').textContent='適用しました'}catch(err){$('jsonstatus').textContent='エラー: '+err.message}};
-  function tab(n){var f=n==='fig';$('pane-fig').hidden=!f;$('pane-doc').hidden=f;$('tab-fig').setAttribute('aria-selected',f);$('tab-doc').setAttribute('aria-selected',!f)}
+  function tab(n){var f=n==='fig';if(f&&eng)setTimeout(function(){eng.refit()},30);$('pane-fig').hidden=!f;$('pane-doc').hidden=f;$('tab-fig').setAttribute('aria-selected',f);$('tab-doc').setAttribute('aria-selected',!f)}
   $('tab-fig').onclick=function(){tab('fig')}; $('tab-doc').onclick=function(){tab('doc')};
 
   function dl(name,mime,data){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:mime}));a.download=name;a.click()}
@@ -203,14 +262,14 @@ function md(src){
     var css=getComputedStyle(document.documentElement), keys=['--bg','--panel','--fg','--muted','--line','--k8s','--info','--loki','--warn','--err','--purple'];
     var style=':root{'+keys.map(function(k){return k+':'+css.getPropertyValue(k).trim()}).join(';')+'}'
      +'body{margin:0;padding:24px;background:var(--bg);color:var(--fg);font-family:"Noto Sans JP",system-ui,sans-serif}h1{font-size:1.4rem;margin:0}p.s{color:var(--muted);margin:4px 0 16px}'
-     +'.st{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow-x:auto}canvas{display:block;min-width:760px;width:100%}'
+     +'.st{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow-x:auto}canvas{display:block;width:100%}'
      +'.roles{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin:12px 0}.role{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}.role b{display:block;font-size:.88rem}.role i{font-style:normal;font-family:monospace;font-size:.72rem;color:var(--k8s)}.role span{display:block;color:var(--muted);font-size:.8rem}'
      +'.doc{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 26px 22px;line-height:1.8;max-width:900px}.doc h2{border-bottom:1px solid var(--line);padding-bottom:4px;margin-top:26px}.doc code{font-family:monospace;background:var(--bg);padding:1px 5px;border-radius:4px}.doc pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;overflow-x:auto}.doc pre code{padding:0}.doc .tw{overflow-x:auto}.doc table{border-collapse:collapse;font-size:.84rem}.doc th,.doc td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}.doc th{background:var(--bg)}';
     var html='<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(spec.title||'ArchFlow')+'</title>'
      +'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap"><style>'+style+'</style></head><body>'
      +'<h1>'+esc(spec.title||'')+'</h1><p class="s">'+esc(spec.subtitle||'')+'</p><div class="st"><canvas id="c"></canvas></div><div class="roles">'+rolesHtml(spec)+'</div>'
      +(e.doc?'<article class="doc" id="d"></article>':'')
-     +'<script>'+src.replace(/<\//g,'<\\/')+'<\/script><script>'+md.toString()+';ArchFlow(document.getElementById("c"),'+JSON.stringify(spec).replace(/</g,'\\u003c')+');'
+     +'<script>'+src.replace(/<\//g,'<\\/')+'<\/script><script>'+md.toString()+';ArchFlow(document.getElementById("c"),'+JSON.stringify(spec).replace(/</g,'\\u003c')+').autoFit(document.querySelector(".st"));'
      +(e.doc?'document.getElementById("d").innerHTML=md('+JSON.stringify(e.doc).replace(/</g,'\\u003c')+');':'')+'<\/script></body></html>';
     dl(fname(spec)+'.html','text/html',html);
   };

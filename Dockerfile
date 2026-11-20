@@ -3,7 +3,7 @@ FROM node:22-slim
 RUN useradd -m -s /bin/bash appuser
 RUN npm install -g @anthropic-ai/claude-code
 WORKDIR /app
-COPY server.js ./
+COPY server.js core.js ./
 COPY public ./public
 RUN mkdir -p /data/claude-config /data/specs && chown -R appuser:appuser /app /data
 ENV CLAUDE_CONFIG_DIR=/data/claude-config

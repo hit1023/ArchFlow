@@ -1,4 +1,4 @@
-# ArchFlow
+# ARCHPULSE (hit-archflow)
 
 自然言語で構成を説明すると、各部品の**役割が動きで分かるアーキテクチャ図**と**設計書**を作るWebUI。
 作成後は同じ入力欄から、図への修正依頼や質問ができる。
@@ -8,7 +8,9 @@
   - キュー: 粒が溜まり、後段が空くと順に取り出される
   - ワーカー: 処理中リングと待ち行列
 - 製品指定がなければ、LLMが広く使われるOSSを選んで図と設計書に反映する(例: Varnish / HAProxy / RabbitMQ / PostgreSQL)。
+- 図は表示領域に合わせて自動で縮小/拡大される(スクロール不要。右上の − FIT + で手動調整)。各ノードの中にOSS名(product)もピルで表示する。
 - 詳細仕様は [docs/SPEC.md](docs/SPEC.md)。
+- 公開版(Cloudflare Workers): https://archpulse.hitoshi-nakayama-1023.workers.dev
 
 ## 起動
 
@@ -42,7 +44,9 @@ open http://localhost:8897
 
 ```
 hit-archflow/
-├── server.js          HTTPサーバー + claude -p 呼び出し + 図JSONの検証
+├── core.js            プロンプト・JSON検証・設計書整形(Node版とWorker版で共有)
+├── server.js          HTTPサーバー + claude -p 呼び出し
+├── worker/            Cloudflare Workers版(wrangler.toml, src/index.js)
 ├── public/
 │   ├── index.html     UI(チャット、タブ、Markdown描画、エクスポート)
 │   ├── engine.js      描画・シミュレーションエンジン(canvas)。書き出しHTMLにも埋め込まれる
@@ -52,6 +56,24 @@ hit-archflow/
 ├── Dockerfile / docker-compose.yml
 └── app.env            秘密情報(git管理外)
 ```
+
+## Cloudflare Workers版
+
+`worker/` が同じUI(`public/`)と `core.js` をそのまま使う。静的アセット+`/api/*`をWorkerが処理する。
+
+```bash
+cd worker
+npx wrangler deploy
+# Claudeに切り替えたい場合のみ(未設定ならWorkers AIを使う)
+npx wrangler secret put ANTHROPIC_API_KEY
+```
+
+| 項目 | 内容 |
+|---|---|
+| LLM | 既定は Workers AI(Llama 3.3 70B fp8 fast、鍵不要)。`ANTHROPIC_API_KEY` secret があれば Claude(claude-sonnet-5-5)に切替。画面右上のチップに使用中のモデルを表示 |
+| アクセス制限 | 認証なし。KVでIPごと/日(チャット20・仕様書10)と全体/日(400・150)の回数制限 |
+| 応答 | 空白を8秒ごとに流すkeepalive付きJSON。エラーはHTTP 200の `{error}` で返す |
+| 注意 | Workers AIは仕様書がClaudeより短く簡素になる。KV無料枠は書込み1000回/日 |
 
 ## 注意
 
