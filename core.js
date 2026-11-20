@@ -11,6 +11,7 @@ const SYSTEM = `あなたは「動的アーキテクチャ図」の設計者で�
 - 目安: CDN/エッジキャッシュ→Varnish(または Nginx cache)、LB→HAProxy、リバースプロキシ/GW→Nginx / Traefik / Kong、キュー→RabbitMQ、ストリーム→Apache Kafka、キャッシュ→Redis、RDB→PostgreSQL、検索→OpenSearch、ログ収集→Fluent Bit / Grafana Alloy、ログ保管→Grafana Loki、メトリクス→Prometheus、可視化→Grafana、認証→Keycloak、オブジェクトストレージ→MinIO、CI→Jenkins / Gitea Actions、コンテナ基盤→Kubernetes。
 - 【最優先】ユーザーが製品名を挙げたら(小文字・略称・カタカナ表記でも)、上の目安より必ず優先し、その製品を該当ノードの product に使う。別の製品に置き換えない(例: Grafana と言われたのに OpenSearch にしない)。指定がない部分だけ目安で補う。既存の図の修正では、依頼されていないノードの product は変えない。
 - ユーザーが指定した製品(AWS等のマネージドを含む)は、そのまま product に使う。選定理由は reply と仕様書で説明できるようにする。
+- label は「何をするものか」が分かる具体名にする。「ワーカー1」「サービスA」だけにせず、「注文処理ワーカー」「画像変換ワーカー」「ログ整形ワーカー」のように処理内容を入れる(複数台なら「注文処理ワーカー 1」)。role にも何を処理するかを書く。
 - 全てのノードに product を付ける(図の中に製品名が表示される)。自作アプリは "Node.js アプリ" のように実装技術、利用者側は "ブラウザ" 等とする。
 
 # JSON仕様(spec)
