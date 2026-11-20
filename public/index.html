@@ -140,6 +140,7 @@ summary{cursor:pointer;color:var(--muted);font-size:.84rem}
         <button id="toggle" type="button">一時停止</button>
         <button id="burst" type="button">負荷を急増</button>
         <button id="speed" type="button">速度 x1</button>
+        <button id="orient" type="button">縦 / 横</button>
         <button id="undo" type="button">元に戻す</button>
         <button id="redo" type="button">やり直し</button>
         <span class="spacer"></span>
@@ -197,6 +198,7 @@ function md(src){
   function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
   function say(t,c){var d=document.createElement('div');d.className='msg '+c;d.textContent=t;$('log').appendChild(d);$('log').scrollTop=1e9}
   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  var orient=ls('archpulse.orient')==='h'?'h':'v';
   function cur(){return hist[idx]||null}
   function rolesHtml(s){return s.nodes.filter(function(n){return n.role}).map(function(n){return '<div class="role"><b>'+esc(n.label||n.id)+'</b>'+(n.product?'<i>'+esc(n.product)+'</i>':'')+'<span>'+esc(n.role)+'</span></div>'}).join('')}
   function persist(){ls('archflow.state3',JSON.stringify({idx:idx,hist:hist.slice(-12).map(function(h){return{spec:h.spec,doc:h.doc,req:h.req}})}))}
@@ -205,7 +207,7 @@ function md(src){
     if(eng)eng.destroy();
     $('title').textContent=s.title||'無題'; $('subtitle').textContent=s.subtitle||'';
     $('json').value=JSON.stringify(s,null,1); $('roles').innerHTML=rolesHtml(s);
-    eng=ArchFlow($('c'),s); eng.autoFit($('stage')); eng.setSpeed(speeds[si]); $('toggle').textContent='一時停止';
+    eng=ArchFlow($('c'),s,{orient:orient}); eng.autoFit($('stage')); eng.setSpeed(speeds[si]); $('toggle').textContent='一時停止';
     $('doc').innerHTML=e.doc?md(e.doc):'<div class="empty">仕様書はまだありません。「仕様書を生成/再生成」を押してください。</div>';
     $('undo').disabled=idx<=0; $('redo').disabled=idx>=hist.length-1;
     $('mode').textContent=newMode?'新規作成モード(次の送信でゼロから作ります)':'この図への修正依頼・質問ができます';
@@ -246,6 +248,8 @@ function md(src){
   $('toggle').onclick=function(){var q=!eng.isPaused();eng.setPaused(q);$('toggle').textContent=q?'再生':'一時停止'};
   $('burst').onclick=function(){eng.burst()};
   $('speed').onclick=function(){si=(si+1)%speeds.length;eng.setSpeed(speeds[si]);$('speed').textContent='速度 x'+speeds[si]};
+  $('orient').textContent=orient==='v'?'横向きにする':'縦向きにする';
+  $('orient').onclick=function(){orient=orient==='v'?'h':'v';ls('archpulse.orient',orient);eng.setOrient(orient);$('orient').textContent=orient==='v'?'横向きにする':'縦向きにする'};
   $('gendoc').onclick=genDoc;
   $('zin').onclick=function(){eng.zoomBy(1.18)}; $('zout').onclick=function(){eng.zoomBy(1/1.18)}; $('zfit').onclick=function(){eng.zoomReset()};
   fetch('/api/health').then(function(r){return r.json()}).then(function(h){$('llm').textContent='LLM · '+(h.provider||'claude')+(h.model?' / '+String(h.model).replace('@cf/meta/',''):'')}).catch(function(){});
@@ -269,7 +273,7 @@ function md(src){
      +'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap"><style>'+style+'</style></head><body>'
      +'<h1>'+esc(spec.title||'')+'</h1><p class="s">'+esc(spec.subtitle||'')+'</p><div class="st"><canvas id="c"></canvas></div><div class="roles">'+rolesHtml(spec)+'</div>'
      +(e.doc?'<article class="doc" id="d"></article>':'')
-     +'<script>'+src.replace(/<\//g,'<\\/')+'<\/script><script>'+md.toString()+';ArchFlow(document.getElementById("c"),'+JSON.stringify(spec).replace(/</g,'\\u003c')+').autoFit(document.querySelector(".st"));'
+     +'<script>'+src.replace(/<\//g,'<\\/')+'<\/script><script>'+md.toString()+';ArchFlow(document.getElementById("c"),'+JSON.stringify(spec).replace(/</g,'\\u003c')+',{orient:"'+orient+'"}).autoFit(document.querySelector(".st"));'
      +(e.doc?'document.getElementById("d").innerHTML=md('+JSON.stringify(e.doc).replace(/</g,'\\u003c')+');':'')+'<\/script></body></html>';
     dl(fname(spec)+'.html','text/html',html);
   };

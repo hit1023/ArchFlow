@@ -39,7 +39,7 @@ Claude(CLAUDE_CODE_OAUTH_TOKEN で認証)
 - LLM切替: `ANTHROPIC_API_KEY` secretあり → Anthropic API(claude-sonnet-5-5)、なし → Workers AI(Llama 3.3 70B fp8 fast)。`/api/health` が `{provider, model}` を返し、UIのチップに表示。
 - 回数制限(KV): IPごと/日 チャット20・仕様書10、全体/日 400・150。認証なし。
 - Workerの時間制限対策として、応答は空白を8秒ごとに出すストリーミングJSON。失敗は `{error}` をHTTP 200で返し、クライアントは `!r.ok || j.error` で判定。
-- 公開URL: https://archpulse.hitoshi-nakayama-1023.workers.dev
+- 公開URL: https://archpulse.s-quad.com
 
 ## 3. 図JSON(spec)スキーマ
 
@@ -168,3 +168,9 @@ Claude(CLAUDE_CODE_OAUTH_TOKEN で認証)
 - エッジは直線のみ。交差の多い図は配置(col/row)をLLMに修正させる。
 - 設計書は図の変更ごとに自動再生成する(約1〜2分)。差分更新は未対応。
 - 未実施: h-1/gateでの公開、スマホ幅・ライトテーマの目視検証、Worker上のAnthropic切替と修正依頼パスの検証、独自ドメイン。
+
+## 10. 追補(2026-11-21)
+
+- **縦/横レイアウト**: エンジンは `ArchFlow(canvas, spec, {orient:"v"|"h"})`。既定は縦(列=上→下、行=左→右)で、`setOrient` で切替。選択は localStorage `archpulse.orient`、単体HTML書き出しにも反映。縦では列見出しを左に表示。
+- **点滅の抑制**: 辺の発光を廃止し、ノードの発光は弱く・1.2秒でゆっくり減衰、枠色は透明度で補間(色の切替わりによるチカつきを除去)。LBの順番表示も同様にフェード。
+- **公開URL**: https://archpulse.s-quad.com (Workersカスタムドメイン。workers.devは無効)。

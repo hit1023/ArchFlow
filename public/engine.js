@@ -6,7 +6,8 @@
   var NW = 190, NH = 112, CW = 270, RH = 150, MX = 70, MT = 80, MB = 50, SP = 230;
   var TYPES = { pass: 1, cache: 1, queue: 1, worker: 1, lb: 1, fanout: 1, filter: 1, batch: 1, label: 1 };
 
-  function ArchFlow(canvas, spec) {
+  function ArchFlow(canvas, spec, opts) {
+    var vert = !(opts && opts.orient === "h"), W = 0, H = 0;
     var ctx = canvas.getContext("2d");
     var nodes = {}, edges = [], sources = [], parts = [], fx = [];
     var now = 0, speed = 1, paused = false, last = 0, raf = 0, css = {}, loadMul = 1, loadUntil = 0;
@@ -22,8 +23,17 @@
       n.bsize = Math.max(2, Math.round(b.size || 5));
       nodes[d.id] = n; maxCol = Math.max(maxCol, d.col); maxRow = Math.max(maxRow, d.row);
     });
-    var W = maxCol * CW + NW + MX * 2, H = maxRow * RH + NH + MT + MB;
-    Object.keys(nodes).forEach(function (id) { var n = nodes[id]; n.x = MX + n.d.col * CW; n.y = MT + n.d.row * RH; n.cx = n.x + NW / 2; n.cy = n.y + NH / 2; });
+    var VCW = 235, VRH = 190, ML = 150;
+    function layout() {
+      if (vert) { W = ML + maxRow * VCW + NW + MX; H = maxCol * VRH + NH + 60 + MB; }
+      else { W = maxCol * CW + NW + MX * 2; H = maxRow * RH + NH + MT + MB; }
+      Object.keys(nodes).forEach(function (id) {
+        var n = nodes[id];
+        if (vert) { n.x = ML + n.d.row * VCW; n.y = 50 + n.d.col * VRH; } else { n.x = MX + n.d.col * CW; n.y = MT + n.d.row * RH; }
+        n.cx = n.x + NW / 2; n.cy = n.y + NH / 2;
+      });
+    }
+    layout();
     (spec.edges || []).forEach(function (e) {
       var a = nodes[e.from], b = nodes[e.to]; if (!a || !b) return;
       var ed = { a: a, b: b, label: e.label, flash: -9 }; edges.push(ed); a.out.push(ed);
@@ -160,7 +170,7 @@
         var bl = n.inbox.length; text("待ち " + bl, x + cc * gap + 6, y + 76, 12, bl > 2 ? css["--err"] : css["--fg"], "left", true, 500);
       } else if (n.type === "lb") {
         var k = n.out.length || 1;
-        for (i = 0; i < k; i++) { var on = n.lastEdge === n.out[i] && now - n.lastEdge.flash < 0.5; rr(x + i * 36, y + 56, 30, 14, 4); ctx.fillStyle = on ? c : css["--bg"]; ctx.fill(); }
+        for (i = 0; i < k; i++) { var on = n.lastEdge === n.out[i] ? glow(n.lastEdge.flash, 0.9) : 0; rr(x + i * 36, y + 56, 30, 14, 4); ctx.fillStyle = css["--bg"]; ctx.fill(); if (on) { ctx.globalAlpha = on; ctx.fillStyle = c; ctx.fill(); ctx.globalAlpha = 1; } }
         text("順番に振り分け", x, y + 84, 11, mut, "left", false);
       } else if (n.type === "fanout") {
         text("全てに複製して配信", x, y + 66, 12, mut, "left", false); text("→ ×" + (n.out.length || 1), x + w, y + 66, 12, c, "right", true, 500);
@@ -182,7 +192,10 @@
       if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) { canvas.width = Math.round(cw * dpr); canvas.height = Math.round(ch * dpr); canvas.style.height = ch + "px"; }
       var s = cw / W; ctx.setTransform(dpr * s, 0, 0, dpr * s, 0, 0); ctx.clearRect(0, 0, W, H);
       ctx.globalAlpha = 0.5; ctx.fillStyle = css["--line"]; for (var gx = 15; gx < W; gx += 30) for (var gy = 15; gy < H; gy += 30) ctx.fillRect(gx, gy, 1.4, 1.4); ctx.globalAlpha = 1;
-      (spec.columnLabels || []).forEach(function (l, i) { text(l, MX + i * CW + NW / 2, 36, 15, css["--muted"], "center", false, 500, CW - 20); });
+      (spec.columnLabels || []).forEach(function (l, i) {
+        if (vert) { text(l, 16, 50 + i * VRH + NH / 2, 14, css["--muted"], "left", false, 500, ML - 34); ctx.globalAlpha = 0.4; ctx.fillStyle = css["--line"]; ctx.fillRect(ML - 14, 50 + i * VRH + 10, 1.5, NH - 20); ctx.globalAlpha = 1; }
+        else text(l, MX + i * CW + NW / 2, 36, 15, css["--muted"], "center", false, 500, CW - 20);
+      });
       (spec.groups || []).forEach(function (g) {
         var ns = g.nodes.map(function (id) { return nodes[id]; }).filter(Boolean); if (!ns.length) return;
         var x0 = Math.min.apply(null, ns.map(function (n) { return n.x; })) - 22, y0 = Math.min.apply(null, ns.map(function (n) { return n.y; })) - 34;
@@ -191,19 +204,20 @@
         text(g.label || "", x0 + 14, y0 + 15, 12, css["--muted"], "left", false, 500);
       });
       ctx.lineWidth = 1.5; ctx.setLineDash([4, 6]);
-      edges.forEach(function (e) { ctx.strokeStyle = glow(e.flash, 0.5) > 0 ? css["--fg"] : css["--line"]; ctx.beginPath(); ctx.moveTo(e.a.cx, e.a.cy); ctx.lineTo(e.b.cx, e.b.cy); ctx.stroke(); });
+      edges.forEach(function (e) { ctx.strokeStyle = css["--line"]; ctx.beginPath(); ctx.moveTo(e.a.cx, e.a.cy); ctx.lineTo(e.b.cx, e.b.cy); ctx.stroke(); });
       ctx.setLineDash([]); edges.forEach(drawArrow);
       edges.forEach(function (e) { if (!e.label) return; var mx = (e.a.cx + e.b.cx) / 2, my = (e.a.cy + e.b.cy) / 2; ctx.font = "11px sans-serif"; var tw = ctx.measureText(e.label).width + 12; rr(mx - tw / 2, my - 10, tw, 20, 10); ctx.fillStyle = css["--bg"]; ctx.fill(); text(e.label, mx, my, 11, css["--muted"], "center"); });
       parts.forEach(function (p) {
         if (p.state !== "move") return; var q = pos(p), c = col(p.v.color);
-        ctx.save(); ctx.shadowColor = p.hitFx ? css["--info"] : c; ctx.shadowBlur = p.hitFx ? 14 : 8; rr(q[0] - 14, q[1] - 6, 28, 12, 3); ctx.fillStyle = c; ctx.fill(); ctx.restore();
+        ctx.save(); ctx.shadowColor = p.hitFx ? css["--info"] : c; ctx.shadowBlur = p.hitFx ? 8 : 4; rr(q[0] - 14, q[1] - 6, 28, 12, 3); ctx.fillStyle = c; ctx.fill(); ctx.restore();
         if (p.hitFx) { rr(q[0] - 14, q[1] - 6, 28, 12, 3); ctx.lineWidth = 2; ctx.strokeStyle = css["--info"]; ctx.stroke(); text("↩", q[0], q[1] - 14, 12, css["--info"], "center", true, 700); }
         else { rr(q[0] - 9, q[1] - 2.5, 12, 2, 1); ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.fill(); rr(q[0] - 9, q[1] + 1, 18, 2, 1); ctx.fillStyle = "rgba(255,255,255,.6)"; ctx.fill(); }
       });
       Object.keys(nodes).forEach(function (id) {
-        var n = nodes[id], c = nodeCol(n), g = glow(n.hit, 0.6);
-        ctx.save(); if (g > 0) { ctx.shadowColor = c; ctx.shadowBlur = 18 * g; } rr(n.x, n.y, NW, NH, 12); ctx.fillStyle = css["--panel"]; ctx.fill(); ctx.restore();
-        rr(n.x, n.y, NW, NH, 12); ctx.lineWidth = 1.5; ctx.strokeStyle = g > 0.05 ? c : css["--line"]; ctx.stroke();
+        var n = nodes[id], c = nodeCol(n), g = 0.45 * glow(n.hit, 1.2);
+        ctx.save(); if (g > 0) { ctx.shadowColor = c; ctx.shadowBlur = 10 * g; } rr(n.x, n.y, NW, NH, 12); ctx.fillStyle = css["--panel"]; ctx.fill(); ctx.restore();
+        rr(n.x, n.y, NW, NH, 12); ctx.lineWidth = 1.5; ctx.strokeStyle = css["--line"]; ctx.stroke();
+        if (g > 0.01) { ctx.globalAlpha = Math.min(1, g * 1.6); ctx.strokeStyle = c; ctx.stroke(); ctx.globalAlpha = 1; }
         ctx.beginPath(); ctx.arc(n.x + 16, n.y + 16, 4.5, 0, 7); ctx.fillStyle = c; ctx.fill();
         text((n.type !== "pass" ? n.type : n.d.kind || "").toUpperCase(), n.x + 28, n.y + 16, 10, css["--muted"], "left", true, 500);
         text(n.d.label || n.d.id, n.x + NW / 2, n.y + 31, 15, css["--fg"], "center", false, 700, NW - 20);
@@ -244,7 +258,8 @@
     }
     function onResize() { fitNow(); }
     return {
-      size: { w: W, h: H },
+      get size() { return { w: W, h: H }; },
+      setOrient: function (o) { vert = o !== "h"; layout(); fitNow(); }, getOrient: function () { return vert ? "v" : "h"; },
       autoFit: function (box) { fitBox = box; canvas.style.margin = "0 auto"; fitNow(); window.addEventListener("resize", onResize); if (window.ResizeObserver) { ro = new ResizeObserver(fitNow); ro.observe(box); } },
       refit: fitNow, zoomBy: function (f) { zf = Math.max(0.4, Math.min(2.5, zf * f)); fitNow(); }, zoomReset: function () { zf = 1; fitNow(); },
       setPaused: function (p) { paused = p; }, isPaused: function () { return paused; }, setSpeed: function (v) { speed = v; },
