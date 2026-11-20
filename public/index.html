@@ -4,30 +4,30 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ARCHPULSE</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b1220'/%3E%3Cpath d='M3 17h6l3-9 5 17 3-8h9' fill='none' stroke='%2322d3ee' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23070b09'/%3E%3Cpath d='M3 17h6l3-9 5 17 3-8h9' fill='none' stroke='%232df5b0' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap">
 <style>
-/* ARCHPULSE: dark-first の「コントロールルーム」。グリッド背景+ガラス調パネル+シアン→バイオレットの発光アクセント */
+/* ARCHPULSE: dark-first の「コントロールルーム」。グリッド背景+ガラス調パネル+ミント→ライムの発光アクセント(黒ベース) */
 :root{
-  --bg:#eef2f9; --bg2:#e3e9f4; --panel:#ffffff; --fg:#0f1b2d; --muted:#5a6b85; --line:#cdd6e5;
-  --k8s:#2f6bff; --info:#0fa58a; --loki:#d98200; --warn:#c98f00; --err:#e03a5a; --purple:#7a4bf0;
-  --a1:#0aa5c2; --a2:#7a4bf0; --glass:rgba(255,255,255,.72); --glow:rgba(47,107,255,.18);
+  --bg:#f0f4f2; --bg2:#e4ebe7; --panel:#ffffff; --fg:#0a1612; --muted:#586b63; --line:#c9d6cf;
+  --k8s:#00a58e; --info:#5f9a00; --loki:#d98200; --warn:#c98f00; --err:#d9304f; --purple:#e0552f;
+  --a1:#00a878; --a2:#7cae00; --glass:rgba(255,255,255,.72); --glow:rgba(0,168,120,.18);
   --font-ui:"Noto Sans JP",system-ui,-apple-system,"Hiragino Sans",sans-serif;
   --font-disp:"Space Grotesk","Noto Sans JP",system-ui,sans-serif;
   --font-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
 :root{color-scheme:dark;
-  --bg:#060a14; --bg2:#0a1120; --panel:rgba(16,25,44,.78); --fg:#e9f1ff; --muted:#8497b8; --line:#1f2e4a;
-  --k8s:#5b8cff; --info:#2de2c0; --loki:#ffb347; --warn:#ffd166; --err:#ff5c7a; --purple:#a78bfa;
-  --a1:#22d3ee; --a2:#8b5cf6; --glass:rgba(14,22,40,.66); --glow:rgba(34,211,238,.22);}
+  --bg:#06090a; --bg2:#0a100f; --panel:rgba(15,22,21,.8); --fg:#e8f3ee; --muted:#7f9189; --line:#1c2a26;
+  --k8s:#3fe3c4; --info:#b6f23c; --loki:#ffc03d; --warn:#ffd166; --err:#ff4d6d; --purple:#ff7a59;
+  --a1:#2df5b0; --a2:#c4ff3d; --glass:rgba(12,19,18,.66); --glow:rgba(45,245,176,.2);}
 @media (prefers-color-scheme: light){:root:not([data-theme="dark"]){color-scheme:light;
-  --bg:#eef2f9; --bg2:#e3e9f4; --panel:#ffffff; --fg:#0f1b2d; --muted:#5a6b85; --line:#cdd6e5;
-  --k8s:#2f6bff; --info:#0fa58a; --loki:#d98200; --warn:#c98f00; --err:#e03a5a; --purple:#7a4bf0;
-  --a1:#0aa5c2; --a2:#7a4bf0; --glass:rgba(255,255,255,.72); --glow:rgba(47,107,255,.16)}}
+  --bg:#f0f4f2; --bg2:#e4ebe7; --panel:#ffffff; --fg:#0a1612; --muted:#586b63; --line:#c9d6cf;
+  --k8s:#00a58e; --info:#5f9a00; --loki:#d98200; --warn:#c98f00; --err:#d9304f; --purple:#e0552f;
+  --a1:#00a878; --a2:#7cae00; --glass:rgba(255,255,255,.72); --glow:rgba(0,168,120,.18)}}
 :root[data-theme="light"]{color-scheme:light;
-  --bg:#eef2f9; --bg2:#e3e9f4; --panel:#ffffff; --fg:#0f1b2d; --muted:#5a6b85; --line:#cdd6e5;
-  --k8s:#2f6bff; --info:#0fa58a; --loki:#d98200; --warn:#c98f00; --err:#e03a5a; --purple:#7a4bf0;
-  --a1:#0aa5c2; --a2:#7a4bf0; --glass:rgba(255,255,255,.72); --glow:rgba(47,107,255,.16)}
+  --bg:#f0f4f2; --bg2:#e4ebe7; --panel:#ffffff; --fg:#0a1612; --muted:#586b63; --line:#c9d6cf;
+  --k8s:#00a58e; --info:#5f9a00; --loki:#d98200; --warn:#c98f00; --err:#d9304f; --purple:#e0552f;
+  --a1:#00a878; --a2:#7cae00; --glass:rgba(255,255,255,.72); --glow:rgba(0,168,120,.18)}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;color:var(--fg);font-family:var(--font-ui);font-size:14px;
@@ -53,6 +53,17 @@ aside{display:flex;flex-direction:column;gap:10px;padding:16px;border-right:1px 
 .hint{color:var(--muted);font-size:.8rem;line-height:1.65;margin:0}
 .label{font-family:var(--font-mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
 .log{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px;padding-right:2px}
+.lib{display:flex;flex-direction:column;gap:6px;max-height:46%;overflow:auto;padding-right:2px;flex:0 1 auto}
+.lib .none{color:var(--muted);font-size:.78rem;padding:4px 2px}
+.li{display:flex;gap:6px;align-items:stretch;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--panel) 70%,transparent);transition:border-color .15s,box-shadow .15s}
+.li:hover{border-color:var(--a1)}
+.li.on{border-color:var(--a1);box-shadow:0 0 0 3px var(--glow)}
+.li .open{flex:1;min-width:0;text-align:left;border:0;background:none;border-radius:12px;padding:8px 6px 8px 11px;box-shadow:none}
+.li .open:hover:not(:disabled){box-shadow:none}
+.li .open b{display:block;font-size:.84rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li .open span{display:block;color:var(--muted);font-size:.7rem;font-family:var(--font-mono);margin-top:2px}
+.li .acts{display:flex;flex-direction:column;justify-content:center;gap:3px;padding:5px 7px 5px 0}
+.li .acts button{font-size:.68rem;padding:2px 9px;color:var(--muted)}
 .msg{padding:9px 12px;border-radius:10px;font-size:.84rem;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
 .msg.u{background:color-mix(in srgb,var(--a2) 14%,transparent);border:1px solid color-mix(in srgb,var(--a2) 35%,var(--line))}
 .msg.a{background:color-mix(in srgb,var(--a1) 9%,transparent);border:1px solid color-mix(in srgb,var(--a1) 28%,var(--line))}
@@ -65,7 +76,7 @@ button:hover:not(:disabled){border-color:var(--a1);box-shadow:0 0 0 3px var(--gl
 button:active:not(:disabled){transform:translateY(1px)}
 button:focus-visible{outline:2px solid var(--a1);outline-offset:2px}
 button:disabled{opacity:.4;cursor:default}
-button.primary{border:0;color:#04101c;font-weight:700;background:linear-gradient(90deg,var(--a1),var(--a2));box-shadow:0 4px 22px var(--glow)}
+button.primary{border:0;color:#03140d;font-weight:700;background:linear-gradient(90deg,var(--a1),var(--a2));box-shadow:0 4px 22px var(--glow)}
 button.primary:hover:not(:disabled){box-shadow:0 4px 30px var(--glow),0 0 0 3px var(--glow)}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -82,7 +93,7 @@ main{display:flex;flex-direction:column;gap:12px;padding:18px 22px;min-width:0;m
 .tabs{display:inline-flex;align-self:flex-start;padding:3px;border:1px solid var(--line);border-radius:999px;background:var(--glass)}
 .tabs button{border:0;background:none;border-radius:999px;padding:6px 18px;color:var(--muted)}
 .tabs button:hover:not(:disabled){box-shadow:none;color:var(--fg)}
-.tabs button[aria-selected=true]{color:#04101c;font-weight:700;background:linear-gradient(90deg,var(--a1),var(--a2))}
+.tabs button[aria-selected=true]{color:#03140d;font-weight:700;background:linear-gradient(90deg,var(--a1),var(--a2))}
 .stagewrap{position:relative}
 .stage{position:relative;border-radius:16px;overflow-x:auto;padding:1px;
   background:linear-gradient(135deg,color-mix(in srgb,var(--a1) 55%,var(--line)),var(--line) 35%,var(--line) 65%,color-mix(in srgb,var(--a2) 55%,var(--line)));
@@ -121,7 +132,7 @@ summary{cursor:pointer;color:var(--muted);font-size:.84rem}
 <div class="shell">
   <header class="topbar">
     <div class="brand">
-      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#0b1220" stroke="#22d3ee" stroke-opacity=".5"/><path d="M4 17h6l3-9 5 17 3-8h7" fill="none" stroke="#22d3ee" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#070b09" stroke="#2df5b0" stroke-opacity=".5"/><path d="M4 17h6l3-9 5 17 3-8h7" fill="none" stroke="#2df5b0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <b>ARCHPULSE</b>
     </div>
     <span class="tag">構成が脈打つ、動くアーキテクチャ図</span>
@@ -130,6 +141,8 @@ summary{cursor:pointer;color:var(--muted);font-size:.84rem}
   <div class="app">
     <aside>
       <p class="hint">構成を日本語で書くと、役割が動きで分かる図と設計書を作ります。作ったあとは、図の下の入力欄から修正の依頼も質問もできます。</p>
+      <div class="label">過去の図 <span id="libcount"></span></div>
+      <div class="lib" id="lib"></div>
       <div class="label">会話</div>
       <div class="log" id="log" aria-live="polite"></div>
     </aside>
@@ -196,7 +209,7 @@ function md(src){
 }
 (function(){
   var $=function(i){return document.getElementById(i)};
-  var hist=[], idx=-1, eng=null, speeds=[1,2,.5], si=0, newMode=false, chat=[], docToken=0;
+  var lib=[], curId=null, hist=[], idx=-1, eng=null, speeds=[1,2,.5], si=0, newMode=false, chat=[], docToken=0;
   var START=["Webリクエストの流れ","CI/CD","メッセージキュー"];
   var STARTP=["ユーザーのリクエストがCDN、ロードバランサー、Webサーバー2台、DBの順に流れる図。たまに5xxエラーも流れる。","開発者のgit pushからCIでのテスト、Dockerイメージ作成、レジストリ、本番へのデプロイまでの流れ。テスト失敗も流れる。","注文サービスがキューにメッセージを積み、ワーカー3台が取り出して処理し、結果をDBに保存する図。"];
   var FOLLOW=["ボトルネックはどこ？","Webサーバーを3台に増やして","このキャッシュにRedisを使う理由は？","WAFを入口に追加して"];
@@ -206,7 +219,38 @@ function md(src){
   var orient=ls('archpulse.orient')==='h'?'h':'v';
   function cur(){return hist[idx]||null}
   function rolesHtml(s){return s.nodes.filter(function(n){return n.role}).map(function(n){return '<div class="role"><b>'+esc(n.label||n.id)+'</b>'+(n.product?'<i>'+esc(n.product)+'</i>':'')+'<span>'+esc(n.role)+'</span></div>'}).join('')}
-  function persist(){ls('archflow.state3',JSON.stringify({idx:idx,hist:hist.slice(-12).map(function(h){return{spec:h.spec,doc:h.doc,req:h.req}})}))}
+  function persist(){
+    syncLib();
+    ls('archflow.state3',JSON.stringify({idx:idx,curId:curId,hist:hist.slice(-12).map(function(h){return{spec:h.spec,doc:h.doc,req:h.req}})}));
+    ls('archpulse.lib',JSON.stringify(lib.slice(0,30)));
+  }
+  function syncLib(){
+    var e=cur(); if(!e||!curId)return; var it=lib.filter(function(x){return x.id===curId})[0];
+    if(!it){it={id:curId};lib.unshift(it)}
+    it.title=e.spec.title||'無題'; it.subtitle=e.spec.subtitle||''; it.spec=e.spec; it.doc=e.doc; it.req=e.req; it.ts=it.ts||Date.now(); it.upd=Date.now();
+  }
+  function fmt(t){var d=new Date(t||Date.now());return (d.getMonth()+1)+'/'+d.getDate()+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
+  function renderLib(){
+    var box=$('lib'); box.innerHTML=''; $('libcount').textContent=lib.length?'('+lib.length+')':'';
+    if(!lib.length){var n=document.createElement('div');n.className='none';n.textContent='作成した図がここに溜まります。';box.appendChild(n);return}
+    lib.forEach(function(it){
+      var row=document.createElement('div');row.className='li'+(it.id===curId?' on':'');
+      var o=document.createElement('button');o.type='button';o.className='open';o.innerHTML='<b></b><span></span>';
+      o.firstChild.textContent=it.title;o.lastChild.textContent=fmt(it.upd||it.ts)+' ・ '+it.spec.nodes.length+'部品';
+      o.onclick=function(){openLib(it.id)};
+      var a=document.createElement('div');a.className='acts';
+      var d=document.createElement('button');d.type='button';d.textContent='HTML';d.title='この図を単体HTMLで保存';d.onclick=function(){exportHtml({spec:it.spec,doc:it.doc})};
+      var x=document.createElement('button');x.type='button';x.textContent='削除';x.onclick=function(){delLib(it.id)};
+      a.appendChild(d);a.appendChild(x);row.appendChild(o);row.appendChild(a);box.appendChild(row);
+    });
+  }
+  function openLib(id){
+    var it=lib.filter(function(x){return x.id===id})[0]; if(!it)return;
+    curId=id; hist=[{spec:it.spec,doc:it.doc||null,req:it.req||''}]; idx=0; newMode=false; chat=[]; render(); chips(); say('「'+it.title+'」を開きました。続けて修正依頼や質問ができます。','s');
+  }
+  function delLib(id){
+    lib=lib.filter(function(x){return x.id!==id}); ls('archpulse.lib',JSON.stringify(lib)); renderLib();
+  }
   function render(){
     var e=cur(); if(!e)return; var s=e.spec;
     if(eng)eng.destroy();
@@ -219,9 +263,9 @@ function md(src){
     $('prompt').placeholder=newMode?'例: ユーザーのリクエストがCDN、ロードバランサー、Webサーバー、DBの順に流れる図。':'例: Webサーバーを3台に増やして / ボトルネックはどこ？ / キャッシュにRedisを使う理由は？';
     $('ctitle').textContent=newMode?'どんな構成の図を作りますか？':'追加・修正の依頼はありますか？';
     $('newbtn').textContent=newMode?'図の修正に戻る':'新規作成に切替';
-    persist();
+    persist(); renderLib();
   }
-  function push(spec,req){hist=hist.slice(0,idx+1);hist.push({spec:spec,doc:null,req:req});idx=hist.length-1;newMode=false;render()}
+  function push(spec,req,isNew){if(isNew||!curId)curId='p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);hist=hist.slice(0,idx+1);hist.push({spec:spec,doc:null,req:req});idx=hist.length-1;newMode=false;render()}
   function chips(){$('chips').innerHTML='';var set=cur()&&!newMode?FOLLOW:START;set.forEach(function(t,i){var b=document.createElement('button');b.type='button';b.textContent=t;b.onclick=function(){$('prompt').value=(cur()&&!newMode)?t:STARTP[i];$('prompt').focus()};$('chips').appendChild(b)})}
 
   async function genDoc(){
@@ -242,7 +286,7 @@ function md(src){
       var r=await fetch('/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({message:p,current:isNew?undefined:e.spec,history:isNew?[]:chat})});
       var j=await r.json(); if(!r.ok||j.error)throw new Error(j.error||'失敗しました');
       chat.push({role:'user',text:p},{role:'assistant',text:j.reply}); say(j.reply,'a');
-      if(j.spec){ push(j.spec, isNew?p:(e.req+'\n追加依頼: '+p)); chips(); genDoc(); }
+      if(j.spec){ push(j.spec, isNew?p:(e.req+'\n追加依頼: '+p), isNew); chips(); genDoc(); }
     }catch(err){say(String(err.message||err),'e')}
     $('go').disabled=false; $('status').textContent='';
   }
@@ -266,8 +310,8 @@ function md(src){
   function dl(name,mime,data){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:mime}));a.download=name;a.click()}
   function fname(s){return (s.title||'archflow').replace(/[^\w\u3040-\u30ff\u4e00-\u9fff-]+/g,'_')}
   $('exportMd').onclick=function(){var e=cur();if(!e)return;if(!e.doc){$('docstatus').textContent='先に仕様書を生成してください';tab('doc');return}dl(fname(e.spec)+'_設計書.md','text/markdown',e.doc)};
-  $('export').onclick=async function(){
-    var e=cur(); if(!e)return; var spec=e.spec;
+  async function exportHtml(e){
+    if(!e)return; var spec=e.spec;
     var src=await (await fetch('/engine.js')).text();
     var css=getComputedStyle(document.documentElement), keys=['--bg','--panel','--fg','--muted','--line','--k8s','--info','--loki','--warn','--err','--purple'];
     var style=':root{'+keys.map(function(k){return k+':'+css.getPropertyValue(k).trim()}).join(';')+'}'
@@ -282,11 +326,13 @@ function md(src){
      +'<script>'+src.replace(/<\//g,'<\\/')+'<\/script><script>'+md.toString()+';ArchFlow(document.getElementById("c"),'+JSON.stringify(spec).replace(/</g,'\\u003c')+',{orient:"'+orient+'"}).autoFit(document.querySelector(".st"));'
      +(e.doc?'document.getElementById("d").innerHTML=md('+JSON.stringify(e.doc).replace(/</g,'\\u003c')+');':'')+'<\/script></body></html>';
     dl(fname(spec)+'.html','text/html',html);
-  };
+  }
+  $('export').onclick=function(){exportHtml(cur())};
 
   (async function(){
     var saved=null; try{saved=JSON.parse(ls('archflow.state3')||'null')}catch(e){}
-    if(saved&&saved.hist&&saved.hist.length){hist=saved.hist;idx=Math.min(saved.idx,hist.length-1)}
+    try{lib=JSON.parse(ls('archpulse.lib')||'[]')||[]}catch(e){lib=[]}
+    if(saved&&saved.hist&&saved.hist.length){hist=saved.hist;idx=Math.min(saved.idx,hist.length-1);curId=saved.curId||null}
     else{
       var s=await (await fetch('/sample.json')).json(), doc=null;
       try{var r=await fetch('/sample.md');if(r.ok)doc=await r.text()}catch(e){}
